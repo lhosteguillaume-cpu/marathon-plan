@@ -500,7 +500,10 @@ function deleteActivity(w,d,idx){
 
 // TABS
 document.getElementById("tab-btn-plan").addEventListener("click",function(){switchTab("plan");});
-document.getElementById("tab-btn-stats").addEventListener("click",function(){switchTab("stats");renderStats();});
+document.getElementById("tab-btn-stats").addEventListener("click",function(){
+  switchTab("stats");
+  loadData().then(function(){renderStats();});
+});
 document.getElementById("tab-btn-renfo").addEventListener("click",function(){switchTab("renfo");});
 document.getElementById("tab-btn-allures").addEventListener("click",function(){switchTab("allures");});
 function switchTab(name){
@@ -621,10 +624,10 @@ function renderWeek(){
       html+='<div class="day-panel">';
       if(s.isRun){
         html+='<div class="fields-grid">';
-        html+='<div class="field-block"><label>Temps réalisé</label><input type="text" placeholder="ex: 48:32" value="'+(sess.time||"")+'" oninput="updateField('+di+',\'time\',this.value)"/></div>';
-        html+='<div class="field-block"><label>Distance réelle (km)</label><input type="number" step="0.1" placeholder="'+s.km+'" value="'+(sess.distReal||"")+'" oninput="updateField('+di+',\'distReal\',this.value)"/></div>';
-        html+='<div class="field-block"><label>FC max (bpm)</label><input type="number" placeholder="ex: 172" value="'+(sess.fcm||"")+'" oninput="updateField('+di+',\'fcm\',this.value)"/></div>';
-        html+='<div class="field-block"><label>Allure calculée</label><div class="pace-box" style="color:'+(pace?"#86efac":"#475569")+';">'+(pace?pace+" /km":"Saisir temps + distance")+'</div></div>';
+        html+='<div class="field-block"><label>Temps réalisé</label><input type="text" inputmode="numeric" placeholder="ex: 48:32" value="'+(sess.time||"")+'" onchange="updateField('+di+',\'time\',this.value)" onblur="updateField('+di+',\'time\',this.value)"/></div>';
+        html+='<div class="field-block"><label>Distance réelle (km)</label><input type="text" inputmode="decimal" placeholder="ex: 10.5" value="'+(sess.distReal||"")+'" onchange="updateField('+di+',\'distReal\',this.value)" onblur="updateField('+di+',\'distReal\',this.value)"/></div>';
+        html+='<div class="field-block"><label>FC max (bpm)</label><input type="text" inputmode="numeric" placeholder="ex: 172" value="'+(sess.fcm||"")+'" onchange="updateField('+di+',\'fcm\',this.value)" onblur="updateField('+di+',\'fcm\',this.value)"/></div>';
+        html+='<div class="field-block"><label>Allure calculée</label><div class="pace-box" id="pace-display-'+di+'" style="color:'+(pace?"#86efac":"#475569")+';">'+(pace?pace+" /km":"Saisir temps + distance")+'</div></div>';
         html+='</div>';
         html+='<div style="margin-top:12px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:11px;color:#64748b;">RPE ressenti</span>'+(target?'<span style="font-size:11px;color:#475569;">cible : '+target+'/10</span>':"")+' </div><div class="rpe-row">';
         for(var r=1;r<=10;r++){
