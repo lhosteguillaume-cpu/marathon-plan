@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Plan Marathon Sub-3h30</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:system-ui,sans-serif;background:#0f172a;color:#f1f5f9;min-height:100vh;padding:16px;}
 button{cursor:pointer;font-family:inherit;}
-input{font-family:inherit;}
+input,select,textarea{font-family:inherit;}
 #auth-screen{max-width:360px;margin:80px auto;background:#1e293b;border-radius:12px;padding:32px;}
 #auth-screen h2{font-size:18px;margin-bottom:4px;}
 #auth-screen p{color:#64748b;font-size:13px;margin-bottom:24px;text-align:center;}
@@ -19,10 +20,10 @@ input{font-family:inherit;}
 .btn-primary{width:100%;padding:10px;border-radius:99px;border:none;background:#3b82f6;color:#fff;font-size:14px;font-weight:700;margin-top:4px;}
 .btn-secondary{width:100%;padding:8px;border-radius:99px;border:1px solid #334155;background:transparent;color:#94a3b8;font-size:13px;margin-top:10px;}
 #auth-msg{font-size:12px;margin-top:8px;text-align:center;}
-#app{max-width:860px;margin:0 auto;display:none;}
+#app{max-width:900px;margin:0 auto;display:none;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
 .logout-btn{font-size:12px;padding:4px 12px;border-radius:99px;border:1px solid #334155;background:transparent;color:#64748b;}
-.tabs{display:flex;gap:6px;justify-content:center;margin-bottom:16px;}
+.tabs{display:flex;gap:6px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
 .tab{padding:6px 16px;border-radius:99px;border:none;font-size:13px;font-weight:600;background:#1e293b;color:#94a3b8;}
 .tab.active{background:#3b82f6;color:#fff;}
 .phase-legend{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;}
@@ -43,7 +44,7 @@ input{font-family:inherit;}
 .day-panel{padding:0 12px 14px;border-top:1px solid #1e293b;}
 .fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
 .field-block label{display:block;font-size:11px;color:#64748b;margin-bottom:4px;}
-.field-block input{width:100%;padding:6px 8px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px;outline:none;}
+.field-block input,.field-block select{width:100%;padding:6px 8px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px;outline:none;}
 .pace-box{padding:6px 8px;border-radius:6px;border:1px solid #334155;background:#0f172a;font-size:13px;min-height:32px;display:flex;align-items:center;}
 .rpe-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;}
 .rpe-btn{width:32px;height:32px;border-radius:6px;border:none;font-size:13px;font-weight:700;background:#1e293b;color:#64748b;}
@@ -59,6 +60,45 @@ input{font-family:inherit;}
 .allure-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#0f172a;border-radius:8px;margin-bottom:6px;}
 .strat-box{margin-top:14px;padding:12px 14px;background:#0f172a;border-radius:8px;border-left:3px solid #3b82f6;font-size:12px;color:#64748b;}
 .strat-box ul{padding-left:14px;display:flex;flex-direction:column;gap:4px;}
+/* Stats */
+.stats-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.stats-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.stats-grid-1{margin-bottom:16px;}
+.stat-card{background:#1e293b;border-radius:12px;padding:16px;}
+.stat-label{font-size:12px;color:#64748b;margin-bottom:6px;}
+.stat-value{font-size:26px;font-weight:700;}
+.stat-sub{font-size:11px;color:#64748b;margin-top:2px;}
+.chart-card{background:#1e293b;border-radius:12px;padding:16px;}
+.chart-title{font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:12px;}
+.chart-wrap{position:relative;width:100%;}
+.consistency-grid{display:flex;flex-direction:column;gap:3px;}
+.consistency-row{display:flex;gap:3px;align-items:center;}
+.consistency-label{font-size:10px;color:#475569;width:24px;flex-shrink:0;}
+.consistency-cell{width:12px;height:12px;border-radius:2px;flex-shrink:0;}
+.records-table{width:100%;border-collapse:collapse;font-size:12px;}
+.records-table th{text-align:left;color:#64748b;padding:6px 8px;border-bottom:1px solid #334155;font-weight:600;}
+.records-table td{padding:6px 8px;border-bottom:1px solid #1e293b;color:#f1f5f9;}
+.history-table{width:100%;border-collapse:collapse;font-size:12px;}
+.history-table th{text-align:left;color:#64748b;padding:6px 8px;border-bottom:1px solid #334155;font-weight:600;font-size:11px;}
+.history-table td{padding:6px 8px;border-bottom:1px solid #1e293b;color:#cbd5e1;font-size:11px;}
+.ratio-bar-wrap{background:#0f172a;border-radius:99px;height:20px;overflow:hidden;margin-top:8px;}
+.ratio-bar-inner{height:100%;border-radius:99px;display:flex;align-items:center;}
+/* Activity modal */
+.modal-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:100;}
+.modal{background:#1e293b;border-radius:12px;padding:24px;width:90%;max-width:360px;}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:16px;}
+.modal-field{margin-bottom:12px;}
+.modal-field label{display:block;font-size:11px;color:#64748b;margin-bottom:4px;}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;padding:7px 10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;outline:none;}
+.modal-field textarea{resize:vertical;min-height:60px;}
+.modal-btns{display:flex;gap:8px;margin-top:16px;}
+.modal-btns button{flex:1;padding:8px;border-radius:99px;border:none;font-size:13px;font-weight:700;}
+.act-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:99px;margin-top:4px;margin-right:4px;}
+@media(max-width:600px){
+  .stats-grid-4{grid-template-columns:1fr 1fr;}
+  .stats-grid-2{grid-template-columns:1fr;}
+  .week-btns{grid-template-columns:repeat(12,1fr);}
+}
 </style>
 </head>
 <body>
@@ -69,14 +109,8 @@ input{font-family:inherit;}
     <h2>Plan Marathon Sub-3h30</h2>
     <p>Connecte-toi pour accéder à ton plan</p>
   </div>
-  <div class="field">
-    <label>Email</label>
-    <input type="email" id="auth-email" placeholder="ton@email.com"/>
-  </div>
-  <div class="field">
-    <label>Mot de passe</label>
-    <input type="password" id="auth-password" placeholder="••••••••"/>
-  </div>
+  <div class="field"><label>Email</label><input type="email" id="auth-email" placeholder="ton@email.com"/></div>
+  <div class="field"><label>Mot de passe</label><input type="password" id="auth-password" placeholder="••••••••"/></div>
   <button class="btn-primary" id="btn-signin">Se connecter</button>
   <button class="btn-secondary" id="btn-signup">Créer un compte</button>
   <div id="auth-msg"></div>
@@ -86,8 +120,7 @@ input{font-family:inherit;}
   <div class="topbar">
     <div>
       <h1 style="font-size:21px;font-weight:700;">🏃 Plan Marathon Sub-3h30</h1>
-      <p style="color:#94a3b8;font-size:12px;margin-top:4px;">
-        23 semaines · 6 avril → 13 septembre · Plat bitume · 4 sorties/semaine
+      <p style="color:#94a3b8;font-size:12px;margin-top:4px;">23 semaines · 6 avril → 13 septembre · Plat bitume · 4 sorties/semaine
         <span id="save-indicator" style="margin-left:8px;color:#22c55e;">✓ Sauvegardé</span>
       </p>
     </div>
@@ -95,9 +128,12 @@ input{font-family:inherit;}
   </div>
   <div class="tabs">
     <button class="tab active" id="tab-btn-plan">📅 Plan</button>
+    <button class="tab" id="tab-btn-stats">📊 Stats</button>
     <button class="tab" id="tab-btn-renfo">💪 Renforcement</button>
     <button class="tab" id="tab-btn-allures">📏 Allures</button>
   </div>
+
+  <!-- PLAN -->
   <div id="tab-plan">
     <div class="phase-legend" id="phase-legend"></div>
     <div class="bars" id="bars"></div>
@@ -109,6 +145,66 @@ input{font-family:inherit;}
       <div id="bilan-confirm" style="font-size:12px;color:#22c55e;margin-top:8px;display:none;">✓ Bilan copié ! Colle-le dans Claude.</div>
     </div>
   </div>
+
+  <!-- STATS -->
+  <div id="tab-stats" style="display:none;">
+    <!-- Row 1: KPIs -->
+    <div class="stats-grid-4" id="stats-kpis"></div>
+    <!-- Row 2: Prédiction + Charge -->
+    <div class="stats-grid-2">
+      <div class="chart-card" id="stats-prediction"></div>
+      <div class="chart-card">
+        <div class="chart-title">Charge hebdomadaire (km × RPE moyen)</div>
+        <div class="chart-wrap" style="height:180px;"><canvas id="chart-charge"></canvas></div>
+      </div>
+    </div>
+    <!-- Row 3: Prévu vs réalisé -->
+    <div class="stats-grid-1 chart-card">
+      <div class="chart-title">Km prévus vs réalisés par semaine</div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="chart-prevreal"></canvas></div>
+    </div>
+    <!-- Row 4: Allure par type -->
+    <div class="stats-grid-1 chart-card">
+      <div class="chart-title">Progression de l'allure (sec/km) par type de séance</div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="chart-allure"></canvas></div>
+    </div>
+    <!-- Row 5: FCM + RPE -->
+    <div class="stats-grid-2">
+      <div class="chart-card">
+        <div class="chart-title">Évolution FC max</div>
+        <div class="chart-wrap" style="height:180px;"><canvas id="chart-fcm"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">RPE ressenti vs cible</div>
+        <div class="chart-wrap" style="height:180px;"><canvas id="chart-rpe"></canvas></div>
+      </div>
+    </div>
+    <!-- Row 6: Ratio 80/20 + Fatigue -->
+    <div class="stats-grid-2">
+      <div class="chart-card" id="stats-ratio"></div>
+      <div class="chart-card">
+        <div class="chart-title">Fatigue cumulée estimée</div>
+        <div class="chart-wrap" style="height:180px;"><canvas id="chart-fatigue"></canvas></div>
+      </div>
+    </div>
+    <!-- Row 7: Records -->
+    <div class="stats-grid-1 chart-card">
+      <div class="chart-title">Meilleures performances</div>
+      <div id="stats-records"></div>
+    </div>
+    <!-- Row 8: Consistance -->
+    <div class="stats-grid-1 chart-card">
+      <div class="chart-title">Calendrier de consistance</div>
+      <div id="stats-consistency" style="overflow-x:auto;padding-top:8px;"></div>
+    </div>
+    <!-- Row 9: Historique -->
+    <div class="stats-grid-1 chart-card">
+      <div class="chart-title">Historique de toutes les séances</div>
+      <div style="overflow-x:auto;"><table class="history-table" id="stats-history"></table></div>
+    </div>
+  </div>
+
+  <!-- RENFO -->
   <div id="tab-renfo" style="display:none;">
     <div class="renfo-card">
       <div style="font-size:13px;font-weight:700;color:#06b6d4;margin-bottom:4px;">Séance renforcement spécifique course</div>
@@ -119,6 +215,8 @@ input{font-family:inherit;}
       </div>
     </div>
   </div>
+
+  <!-- ALLURES -->
   <div id="tab-allures" style="display:none;">
     <div class="allures-card">
       <div style="font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:12px;">Allures cibles — Objectif Sub-3h30</div>
@@ -129,20 +227,51 @@ input{font-family:inherit;}
           <li>Km 1–5 : retiens-toi, pars à 5:05–5:10/km même si tu te sens bien</li>
           <li>Km 6–30 : allure cible constante 4:57–5:00/km</li>
           <li>Km 30–42 : gère au ressenti, accepte un léger ralentissement</li>
-          <li>Gel toutes les 40–45mn dès le km 20 — à tester dès la S13 en sortie longue</li>
+          <li>Gel toutes les 40–45mn dès le km 20 — à tester dès la S13</li>
         </ul>
       </div>
     </div>
   </div>
 </div>
 
+<!-- ACTIVITY MODAL -->
+<div id="activity-modal" class="modal-bg" style="display:none;">
+  <div class="modal">
+    <h3 id="modal-title">Ajouter une activité</h3>
+    <div class="modal-field">
+      <label>Type d'activité</label>
+      <select id="modal-type">
+        <option value="Vélo">Vélo</option>
+        <option value="Muscu">Muscu</option>
+        <option value="Escalade">Escalade</option>
+        <option value="Natation">Natation</option>
+        <option value="Autre">Autre</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Durée (minutes)</label>
+      <input type="number" id="modal-duration" placeholder="ex: 60"/>
+    </div>
+    <div class="modal-field">
+      <label>RPE ressenti (1–10)</label>
+      <div class="rpe-row" id="modal-rpe-row"></div>
+    </div>
+    <div class="modal-field">
+      <label>Note (optionnel)</label>
+      <textarea id="modal-note" placeholder="Observations..."></textarea>
+    </div>
+    <div class="modal-btns">
+      <button style="background:#334155;color:#94a3b8;" onclick="closeModal()">Annuler</button>
+      <button style="background:#3b82f6;color:#fff;" onclick="saveActivity()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ── CONFIG ──────────────────────────────────────────────────────────────────
 var SUPABASE_URL  = 'https://veccyhsxszgehcximizm.supabase.co';
 var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlY2N5aHN4c3pnZWhjeGltaXptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODIzOTAsImV4cCI6MjA5MTA1ODM5MH0.WHKsQfinjeRKZb7A7ZIe90MCRWtgCnpnAqTkAOzSLbI';
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// ── DONNÉES ─────────────────────────────────────────────────────────────────
 var PHASES = [
   {name:"Mise en route",weeks:[1,2,3],color:"#22c55e"},
   {name:"Base aérobie",weeks:[4,5,6,7],color:"#3b82f6"},
@@ -153,6 +282,7 @@ var PHASES = [
 ];
 var JOURS = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 var TC = {"Repos":"#6b7280","Footing facile":"#3b82f6","Tempo":"#f59e0b","Fractionné":"#ef4444","Sortie longue":"#8b5cf6","Course":"#10b981","Repos/vélo":"#6b7280","Muscu/escalade":"#9ca3af","Reporté":"#f97316"};
+var ACT_COLORS = {"Vélo":"#06b6d4","Muscu":"#8b5cf6","Escalade":"#22c55e","Natation":"#3b82f6","Autre":"#94a3b8"};
 var RPE_TARGET = {"Footing facile":4,"Tempo":7,"Fractionné":8,"Sortie longue":6,"Course":10,"Reporté":6};
 var ALLURES = {"Facile":"5:40–6:10/km","Tempo":"4:40–4:45/km","Allure marathon":"4:55–5:00/km","Fractionné 1km":"4:15–4:20/km"};
 var RENFO = [
@@ -174,374 +304,701 @@ var BASE_PLAN=[
   [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu + escalade + renforcement 10mn",0,false),mk("Tempo","2km échauff + 5km tempo + 2km retour",9),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","17km allure facile",17)],
   [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu + escalade + renforcement 10mn",0,false),mk("Tempo","2km échauff + 6km tempo + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","18km allure facile",18)],
   [mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu + escalade + renforcement 10mn",0,false),mk("Tempo","2km échauff + 7km tempo + 2km retour",11),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","20km allure facile",20)],
-  [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 6×1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 7km tempo + 2km retour",11),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","22km (dont 4km à allure marathon en fin)",22)],
-  [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 6×1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 8km tempo + 2km retour",12),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","23km (dont 6km à allure marathon en fin)",23)],
-  [mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 8×1km à 4:18/km (rép 400m) + 2km retour",12),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 9km tempo + 2km retour",13),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","25km (dont 8km à allure marathon en fin)",25)],
-  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu légère + escalade",0,false),mk("Fractionné","2km échauff + 5×1km à 4:18/km (rép 400m) + 2km retour",9),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 6km tempo + 2km retour",10),mk("Repos","Repos total",0,false),mk("Sortie longue","18km allure facile",18)],
-  [mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 8×1km à 4:18/km (rép 400m) + 2km retour",12),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 9km tempo + 2km retour",13),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","26km (dont 8km à allure marathon en fin)",26)],
-  [mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 10×1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 10km tempo + 2km retour",14),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","28km (dont 10km à allure marathon en fin)",28)],
-  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 10×1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 11km tempo + 2km retour",15),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","30km (dont 12km à allure marathon en fin)",30)],
-  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu légère",0,false),mk("Fractionné","2km échauff + 6×1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 7km tempo + 2km retour",11),mk("Repos","Repos total",0,false),mk("Sortie longue","20km allure facile",20)],
-  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade",0,false),mk("Fractionné","2km échauff + 10×1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 10km tempo + 2km retour",14),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","28km (dont 12km à allure marathon)",28)],
-  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade",0,false),mk("Fractionné","2km échauff + 10×1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 10km tempo + 2km retour",14),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","30km (dont 15km à allure marathon)",30)],
-  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade",0,false),mk("Fractionné","2km échauff + 10×1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 12km tempo + 2km retour",16),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","32km (dont 18km à allure marathon)",32)],
-  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu légère uniquement",0,false),mk("Fractionné","2km échauff + 6×1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 6km tempo + 2km retour",10),mk("Repos","Repos total",0,false),mk("Sortie longue","20km allure facile",20)],
-  [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu légère ou escalade légère",0,false),mk("Fractionné","2km échauff + 8×1km à 4:18/km (rép 400m) + 2km retour",12),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","6km allure facile",6),mk("Repos","Repos total",0,false),mk("Sortie longue","24km allure facile",24)],
+  [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 6x1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 7km tempo + 2km retour",11),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","22km (dont 4km à allure marathon en fin)",22)],
+  [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 6x1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 8km tempo + 2km retour",12),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","23km (dont 6km à allure marathon en fin)",23)],
+  [mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 8x1km à 4:18/km (rép 400m) + 2km retour",12),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 9km tempo + 2km retour",13),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","25km (dont 8km à allure marathon en fin)",25)],
+  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu légère + escalade",0,false),mk("Fractionné","2km échauff + 5x1km à 4:18/km (rép 400m) + 2km retour",9),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 6km tempo + 2km retour",10),mk("Repos","Repos total",0,false),mk("Sortie longue","18km allure facile",18)],
+  [mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 8x1km à 4:18/km (rép 400m) + 2km retour",12),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 9km tempo + 2km retour",13),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","26km (dont 8km à allure marathon en fin)",26)],
+  [mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 10x1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 10km tempo + 2km retour",14),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","28km (dont 10km à allure marathon en fin)",28)],
+  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 10x1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 11km tempo + 2km retour",15),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","30km (dont 12km à allure marathon en fin)",30)],
+  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu légère",0,false),mk("Fractionné","2km échauff + 6x1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 7km tempo + 2km retour",11),mk("Repos","Repos total",0,false),mk("Sortie longue","20km allure facile",20)],
+  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade",0,false),mk("Fractionné","2km échauff + 10x1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 10km tempo + 2km retour",14),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","28km (dont 12km à allure marathon)",28)],
+  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade",0,false),mk("Fractionné","2km échauff + 10x1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 10km tempo + 2km retour",14),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","30km (dont 15km à allure marathon)",30)],
+  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade",0,false),mk("Fractionné","2km échauff + 10x1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 12km tempo + 2km retour",16),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","32km (dont 18km à allure marathon)",32)],
+  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu légère uniquement",0,false),mk("Fractionné","2km échauff + 6x1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 6km tempo + 2km retour",10),mk("Repos","Repos total",0,false),mk("Sortie longue","20km allure facile",20)],
+  [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu légère ou escalade légère",0,false),mk("Fractionné","2km échauff + 8x1km à 4:18/km (rép 400m) + 2km retour",12),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","6km allure facile",6),mk("Repos","Repos total",0,false),mk("Sortie longue","24km allure facile",24)],
   [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu légère",0,false),mk("Tempo","2km échauff + 8km tempo + 2km retour",12),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","6km allure facile",6),mk("Repos","Repos total",0,false),mk("Sortie longue","18km allure facile",18)],
   [mk("Footing facile","6km allure facile",6),mk("Repos","Repos ou escalade très légère",0,false),mk("Tempo","2km échauff + 6km tempo + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","5km allure facile",5),mk("Repos","Repos total",0,false),mk("Sortie longue","13km allure facile",13)],
   [mk("Repos","Repos total",0,false),mk("Footing facile","20mn très facile + étirements",3),mk("Repos","Repos + hydratation ++",0,false),mk("Footing facile","15mn footing + 4x100m accélérations",3),mk("Repos","Repos, préparation logistique",0,false),mk("Repos","Repos, pasta party, coucher tôt",0,false),mk("Course","MARATHON - 13 septembre - Objectif : Sub 3h30",42)]
 ];
 
-// ── ÉTAT ────────────────────────────────────────────────────────────────────
-var sessions = {};
-var plan = [];
-var selWeek = 1;
-var expandedDay = null;
-var userId = null;
-var debounceTimers = {};
+// STATE
+var sessions={}, activities={}, plan=[], selWeek=1, expandedDay=null, userId=null;
+var debounceTimers={}, modalWeek=1, modalDay=0, modalRpe=null;
+var charts={};
 
-function initPlan() {
-  plan = [];
-  for (var i = 0; i < BASE_PLAN.length; i++) {
-    var week = [];
-    for (var j = 0; j < BASE_PLAN[i].length; j++) {
-      week.push({type:BASE_PLAN[i][j].type, detail:BASE_PLAN[i][j].detail, km:BASE_PLAN[i][j].km, isRun:BASE_PLAN[i][j].isRun});
+function initPlan(){
+  plan=[];
+  for(var i=0;i<BASE_PLAN.length;i++){
+    var w=[];
+    for(var j=0;j<BASE_PLAN[i].length;j++){
+      var s=BASE_PLAN[i][j];
+      w.push({type:s.type,detail:s.detail,km:s.km,isRun:s.isRun});
     }
-    plan.push(week);
+    plan.push(w);
   }
 }
 
-// ── UTILS ────────────────────────────────────────────────────────────────────
-function totalKm(w) {
-  var s = 0;
-  for (var i = 0; i < w.length; i++) s += (w[i].km || 0);
-  return s;
+// UTILS
+function totalKm(w){var s=0;for(var i=0;i<w.length;i++)s+=(w[i].km||0);return s;}
+function getPhase(n){for(var i=0;i<PHASES.length;i++){if(PHASES[i].weeks.indexOf(n)!==-1)return PHASES[i];}return PHASES[0];}
+function skey(w,d){return w+"-"+d;}
+function weekLabel(n){
+  var s=new Date(2025,3,6);s.setDate(s.getDate()+(n-1)*7);
+  var e=new Date(s.getTime());e.setDate(s.getDate()+6);
+  var f={day:"numeric",month:"short"};
+  return s.toLocaleDateString("fr-FR",f)+" – "+e.toLocaleDateString("fr-FR",f);
 }
-function getPhase(n) {
-  for (var i = 0; i < PHASES.length; i++) {
-    if (PHASES[i].weeks.indexOf(n) !== -1) return PHASES[i];
-  }
-  return PHASES[0];
+function weekShort(n){
+  var s=new Date(2025,3,6);s.setDate(s.getDate()+(n-1)*7);
+  return "S"+n;
 }
-function skey(w, d) { return w + "-" + d; }
-function weekLabel(n) {
-  var s = new Date(2025,3,6);
-  s.setDate(s.getDate() + (n-1)*7);
-  var e = new Date(s.getTime());
-  e.setDate(s.getDate() + 6);
-  var f = {day:"numeric",month:"short"};
-  return s.toLocaleDateString("fr-FR",f) + " – " + e.toLocaleDateString("fr-FR",f);
-}
-function parseTime(str) {
-  if (!str || !str.trim()) return null;
-  var p = str.trim().split(":").map(Number);
-  for (var i = 0; i < p.length; i++) { if (isNaN(p[i])) return null; }
-  if (p.length === 3) return p[0]*3600 + p[1]*60 + p[2];
-  if (p.length === 2) return p[0]*60 + p[1];
+function parseTime(str){
+  if(!str||!str.trim())return null;
+  var p=str.trim().split(":").map(Number);
+  for(var i=0;i<p.length;i++){if(isNaN(p[i]))return null;}
+  if(p.length===3)return p[0]*3600+p[1]*60+p[2];
+  if(p.length===2)return p[0]*60+p[1];
   return null;
 }
-function fmtTime(sec) {
-  if (sec == null) return "";
-  var h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
-  if (h > 0) return h + ":" + pad(m) + ":" + pad(s);
-  return m + ":" + pad(s);
+function fmtTime(sec){
+  if(sec==null)return "";
+  var h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+  if(h>0)return h+":"+pad(m)+":"+pad(s);
+  return m+":"+pad(s);
 }
-function pad(n) { return n < 10 ? "0" + n : "" + n; }
-function calcPace(sec, km) {
-  if (!sec || !km || km <= 0) return null;
-  return fmtTime(Math.round(sec/km));
+function pad(n){return n<10?"0"+n:""+n;}
+function calcPace(sec,km){if(!sec||!km||km<=0)return null;return fmtTime(Math.round(sec/km));}
+function calcPaceSec(sec,km){if(!sec||!km||km<=0)return null;return Math.round(sec/km);}
+function rpeColor(r){if(r<=4)return"#22c55e";if(r<=6)return"#3b82f6";if(r<=8)return"#f59e0b";return"#ef4444";}
+function rpeComment(actual,target,type){
+  if(!actual)return null;
+  if(type==="Course")return actual>=9?"Tu t'es tout donné !":"Conserve de l'énergie pour la fin !";
+  var d=actual-target;
+  if(d<=-2)return"En dessous de la cible — tu peux hausser l'allure la prochaine fois.";
+  if(d===-1)return"Légèrement en dessous — reste dans cette zone.";
+  if(d<=1)return"Dans la cible — parfait.";
+  if(d===2)return"Un peu chargé — assure-toi de bien récupérer.";
+  return"Trop intense — réduis l'allure ou le volume la prochaine fois.";
 }
-function rpeColor(r) {
-  if (r <= 4) return "#22c55e";
-  if (r <= 6) return "#3b82f6";
-  if (r <= 8) return "#f59e0b";
-  return "#ef4444";
+function setSaveIndicator(state){
+  var el=document.getElementById("save-indicator");
+  if(state==="saving"){el.textContent="· Sauvegarde…";el.style.color="#f59e0b";}
+  else{el.textContent="· Sauvegardé ✓";el.style.color="#22c55e";}
 }
-function rpeComment(actual, target, type) {
-  if (!actual) return null;
-  if (type === "Course") return actual >= 9 ? "Tu t'es tout donné !" : "Conserve de l'énergie pour la fin !";
-  var d = actual - target;
-  if (d <= -2) return "En dessous de la cible — tu peux hausser l'allure la prochaine fois.";
-  if (d === -1) return "Légèrement en dessous — reste dans cette zone.";
-  if (d <= 1)  return "Dans la cible — parfait.";
-  if (d === 2) return "Un peu chargé — assure-toi de bien récupérer.";
-  return "Trop intense — réduis l'allure ou le volume la prochaine fois.";
-}
-function setSaveIndicator(state) {
-  var el = document.getElementById("save-indicator");
-  if (state === "saving") { el.textContent = "· Sauvegarde…"; el.style.color = "#f59e0b"; }
-  else { el.textContent = "· Sauvegardé ✓"; el.style.color = "#22c55e"; }
-}
-function getSession(w, d) {
-  return sessions[skey(w,d)] || {done:false,rpe:null,time:"",distReal:"",fcm:""};
-}
+function getSession(w,d){return sessions[skey(w,d)]||{done:false,rpe:null,time:"",distReal:"",fcm:""};}
+function getActivities(w,d){return activities[skey(w,d)]||[];}
 
-// ── AUTH ─────────────────────────────────────────────────────────────────────
-function showAuthMsg(msg, isError) {
-  var el = document.getElementById("auth-msg");
-  el.textContent = msg;
-  el.style.color = isError ? "#f87171" : "#22c55e";
-}
-document.getElementById("btn-signin").addEventListener("click", function() {
-  var email = document.getElementById("auth-email").value;
-  var pass  = document.getElementById("auth-password").value;
-  sb.auth.signInWithPassword({email:email, password:pass}).then(function(res) {
-    if (res.error) showAuthMsg(res.error.message, true);
+// AUTH
+function showAuthMsg(msg,isError){var el=document.getElementById("auth-msg");el.textContent=msg;el.style.color=isError?"#f87171":"#22c55e";}
+document.getElementById("btn-signin").addEventListener("click",function(){
+  var email=document.getElementById("auth-email").value;
+  var pass=document.getElementById("auth-password").value;
+  sb.auth.signInWithPassword({email:email,password:pass}).then(function(res){if(res.error)showAuthMsg(res.error.message,true);});
+});
+document.getElementById("btn-signup").addEventListener("click",function(){
+  var email=document.getElementById("auth-email").value;
+  var pass=document.getElementById("auth-password").value;
+  sb.auth.signUp({email:email,password:pass}).then(function(res){
+    if(res.error)showAuthMsg(res.error.message,true);
+    else showAuthMsg("Compte créé ! Tu peux te connecter.",false);
   });
 });
-document.getElementById("btn-signup").addEventListener("click", function() {
-  var email = document.getElementById("auth-email").value;
-  var pass  = document.getElementById("auth-password").value;
-  sb.auth.signUp({email:email, password:pass}).then(function(res) {
-    if (res.error) showAuthMsg(res.error.message, true);
-    else showAuthMsg("Compte créé ! Tu peux te connecter.", false);
-  });
-});
-document.getElementById("btn-logout").addEventListener("click", function() {
-  sb.auth.signOut().then(function() {
-    document.getElementById("app").style.display = "none";
-    document.getElementById("auth-screen").style.display = "block";
+document.getElementById("btn-logout").addEventListener("click",function(){
+  sb.auth.signOut().then(function(){
+    document.getElementById("app").style.display="none";
+    document.getElementById("auth-screen").style.display="block";
   });
 });
 
-// ── SUPABASE DATA ────────────────────────────────────────────────────────────
-function loadData() {
-  return sb.from("sessions").select("*").eq("user_id", userId).then(function(res) {
-    sessions = {};
-    var data = res.data || [];
-    for (var i = 0; i < data.length; i++) {
-      var r = data[i];
-      sessions[r.session_key] = {done:r.done, rpe:r.rpe, time:r.time, distReal:r.dist_real, fcm:r.fcm};
+// DATA
+function loadData(){
+  return sb.from("sessions").select("*").eq("user_id",userId).then(function(res){
+    sessions={};
+    var data=res.data||[];
+    for(var i=0;i<data.length;i++){
+      var r=data[i];
+      sessions[r.session_key]={done:r.done,rpe:r.rpe,time:r.time,distReal:r.dist_real,fcm:r.fcm};
     }
-    return sb.from("plan_overrides").select("*").eq("user_id", userId);
-  }).then(function(res) {
-    var pd = res.data || [];
-    if (pd.length > 0) {
-      try { plan = JSON.parse(pd[0].plan_json); } catch(e) { initPlan(); }
+    return sb.from("plan_overrides").select("*").eq("user_id",userId);
+  }).then(function(res){
+    var pd=res.data||[];
+    if(pd.length>0){try{plan=JSON.parse(pd[0].plan_json);}catch(e){initPlan();}}
+    return sb.from("activities").select("*").eq("user_id",userId);
+  }).then(function(res){
+    activities={};
+    var data=res.data||[];
+    for(var i=0;i<data.length;i++){
+      var r=data[i];
+      var k=skey(r.week_num,r.day_index);
+      if(!activities[k])activities[k]=[];
+      activities[k].push({id:r.id,type:r.type,duration:r.duration,rpe:r.rpe,note:r.note});
     }
   });
 }
-function saveSession(w, d, patch) {
+function saveSession(w,d,patch){
   setSaveIndicator("saving");
-  var key = skey(w, d);
-  var cur = sessions[key] || {done:false,rpe:null,time:"",distReal:"",fcm:""};
-  for (var k in patch) cur[k] = patch[k];
-  sessions[key] = cur;
-  sb.from("sessions").upsert({user_id:userId, session_key:key, done:cur.done, rpe:cur.rpe, time:cur.time, dist_real:cur.distReal, fcm:cur.fcm}, {onConflict:"user_id,session_key"}).then(function() {
-    setSaveIndicator("saved");
-    renderWeek();
-    renderBars();
+  var key=skey(w,d);
+  var cur=sessions[key]||{done:false,rpe:null,time:"",distReal:"",fcm:""};
+  for(var k in patch)cur[k]=patch[k];
+  sessions[key]=cur;
+  sb.from("sessions").upsert({user_id:userId,session_key:key,done:cur.done,rpe:cur.rpe,time:cur.time,dist_real:cur.distReal,fcm:cur.fcm},{onConflict:"user_id,session_key"}).then(function(){
+    setSaveIndicator("saved");renderWeek();renderBars();
   });
 }
-function savePlan() {
+function savePlan(){
   setSaveIndicator("saving");
-  sb.from("plan_overrides").upsert({user_id:userId, plan_json:JSON.stringify(plan)}, {onConflict:"user_id"}).then(function() {
-    setSaveIndicator("saved");
-  });
+  sb.from("plan_overrides").upsert({user_id:userId,plan_json:JSON.stringify(plan)},{onConflict:"user_id"}).then(function(){setSaveIndicator("saved");});
 }
 
-// ── TABS ─────────────────────────────────────────────────────────────────────
-document.getElementById("tab-btn-plan").addEventListener("click", function() { switchTab("plan"); });
-document.getElementById("tab-btn-renfo").addEventListener("click", function() { switchTab("renfo"); });
-document.getElementById("tab-btn-allures").addEventListener("click", function() { switchTab("allures"); });
-function switchTab(name) {
-  var tabs = ["plan","renfo","allures"];
-  for (var i = 0; i < tabs.length; i++) {
-    document.getElementById("tab-" + tabs[i]).style.display = tabs[i] === name ? "block" : "none";
-    document.getElementById("tab-btn-" + tabs[i]).className = "tab" + (tabs[i] === name ? " active" : "");
+// ACTIVITY MODAL
+function openModal(w,d){
+  modalWeek=w;modalDay=d;modalRpe=null;
+  document.getElementById("modal-type").value="Vélo";
+  document.getElementById("modal-duration").value="";
+  document.getElementById("modal-note").value="";
+  renderModalRpe();
+  document.getElementById("activity-modal").style.display="flex";
+}
+function closeModal(){document.getElementById("activity-modal").style.display="none";}
+function renderModalRpe(){
+  var html="";
+  for(var r=1;r<=10;r++){
+    var sel=modalRpe===r;
+    html+='<button class="rpe-btn" style="background:'+(sel?rpeColor(r):"#1e293b")+';color:'+(sel?"#fff":"#64748b")+';" onclick="setModalRpe('+r+')">'+ r+'</button>';
+  }
+  document.getElementById("modal-rpe-row").innerHTML=html;
+}
+function setModalRpe(r){modalRpe=modalRpe===r?null:r;renderModalRpe();}
+function saveActivity(){
+  var type=document.getElementById("modal-type").value;
+  var duration=parseInt(document.getElementById("modal-duration").value)||null;
+  var note=document.getElementById("modal-note").value;
+  setSaveIndicator("saving");
+  sb.from("activities").insert({user_id:userId,week_num:modalWeek,day_index:modalDay,type:type,duration:duration,rpe:modalRpe,note:note}).then(function(res){
+    var r=res.data&&res.data[0];
+    var k=skey(modalWeek,modalDay);
+    if(!activities[k])activities[k]=[];
+    if(r)activities[k].push({id:r.id,type:type,duration:duration,rpe:modalRpe,note:note});
+    else activities[k].push({type:type,duration:duration,rpe:modalRpe,note:note});
+    setSaveIndicator("saved");
+    closeModal();renderWeek();
+  });
+}
+function deleteActivity(w,d,idx){
+  var k=skey(w,d);
+  var acts=activities[k]||[];
+  var act=acts[idx];
+  if(!act)return;
+  if(act.id){
+    sb.from("activities").delete().eq("id",act.id).then(function(){});
+  }
+  acts.splice(idx,1);
+  activities[k]=acts;
+  renderWeek();
+}
+
+// TABS
+document.getElementById("tab-btn-plan").addEventListener("click",function(){switchTab("plan");});
+document.getElementById("tab-btn-stats").addEventListener("click",function(){switchTab("stats");renderStats();});
+document.getElementById("tab-btn-renfo").addEventListener("click",function(){switchTab("renfo");});
+document.getElementById("tab-btn-allures").addEventListener("click",function(){switchTab("allures");});
+function switchTab(name){
+  var tabs=["plan","stats","renfo","allures"];
+  for(var i=0;i<tabs.length;i++){
+    document.getElementById("tab-"+tabs[i]).style.display=tabs[i]===name?"block":"none";
+    document.getElementById("tab-btn-"+tabs[i]).className="tab"+(tabs[i]===name?" active":"");
   }
 }
 
-// ── BILAN ────────────────────────────────────────────────────────────────────
-document.getElementById("btn-bilan").addEventListener("click", function() {
-  var w2 = selWeek, w1 = Math.max(1, selWeek - 1);
-  var lines = ["=== BILAN SEMAINES " + w1 + " & " + w2 + " ==="];
-  var wns = [w1, w2];
-  for (var wi = 0; wi < wns.length; wi++) {
-    var wn = wns[wi];
-    lines.push("\n-- Semaine " + wn + " (" + weekLabel(wn) + ") --");
-    var wk = plan[wn-1];
-    for (var di = 0; di < wk.length; di++) {
-      var s = wk[di];
-      if (!s.isRun) continue;
-      var sess = getSession(wn, di);
-      var timeSec = parseTime(sess.time);
-      var dist = parseFloat(sess.distReal) || null;
-      var pace = calcPace(timeSec, dist || s.km);
-      lines.push(JOURS[di] + " " + s.type + " | Prévu: " + s.km + "km | Réalisé: " + (dist ? dist+"km" : "—") + " | Temps: " + (sess.time||"—") + " | Allure: " + (pace ? pace+"/km" : "—") + " | FCM: " + (sess.fcm||"—") + "bpm | RPE: " + (sess.rpe||"—") + "/10 | Fait: " + (sess.done?"Oui":"Non"));
+// BILAN
+document.getElementById("btn-bilan").addEventListener("click",function(){
+  var w2=selWeek,w1=Math.max(1,selWeek-1);
+  var lines=["=== BILAN SEMAINES "+w1+" & "+w2+" ==="];
+  var wns=[w1,w2];
+  for(var wi=0;wi<wns.length;wi++){
+    var wn=wns[wi];
+    lines.push("\n-- Semaine "+wn+" ("+weekLabel(wn)+") --");
+    lines.push("SÉANCES COURSE :");
+    var wk=plan[wn-1];
+    for(var di=0;di<wk.length;di++){
+      var s=wk[di];
+      if(!s.isRun)continue;
+      var sess=getSession(wn,di);
+      var timeSec=parseTime(sess.time);
+      var dist=parseFloat(sess.distReal)||null;
+      var pace=calcPace(timeSec,dist||s.km);
+      lines.push(JOURS[di]+" "+s.type+" | Prévu: "+s.km+"km | Réalisé: "+(dist?dist+"km":"—")+" | Temps: "+(sess.time||"—")+" | Allure: "+(pace?pace+"/km":"—")+" | FCM: "+(sess.fcm||"—")+"bpm | RPE: "+(sess.rpe||"—")+"/10 | Fait: "+(sess.done?"Oui":"Non"));
     }
+    lines.push("ACTIVITÉS COMPLÉMENTAIRES :");
+    var hasAct=false;
+    for(var di=0;di<7;di++){
+      var acts=getActivities(wn,di);
+      for(var ai=0;ai<acts.length;ai++){
+        var a=acts[ai];
+        lines.push(JOURS[di]+" "+a.type+" | Durée: "+(a.duration?a.duration+"mn":"—")+" | RPE: "+(a.rpe||"—")+"/10"+(a.note?" | Note: "+a.note:""));
+        hasAct=true;
+      }
+    }
+    if(!hasAct)lines.push("Aucune activité complémentaire enregistrée.");
   }
   lines.push("\nMerci d'analyser ces données et de me proposer un bilan + éventuelles adaptations du plan.");
-  navigator.clipboard.writeText(lines.join("\n")).then(function() {
-    var c = document.getElementById("bilan-confirm");
-    c.style.display = "block";
-    setTimeout(function() { c.style.display = "none"; }, 4000);
+  navigator.clipboard.writeText(lines.join("\n")).then(function(){
+    var c=document.getElementById("bilan-confirm");c.style.display="block";
+    setTimeout(function(){c.style.display="none";},4000);
   });
 });
 
-// ── RENDER ────────────────────────────────────────────────────────────────────
-function renderPhaseLegend() {
-  var html = "";
-  for (var i = 0; i < PHASES.length; i++) {
-    var p = PHASES[i];
-    html += '<div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#cbd5e1;"><div style="width:8px;height:8px;border-radius:2px;background:' + p.color + ';flex-shrink:0;"></div><span>S' + p.weeks[0] + '–S' + p.weeks[p.weeks.length-1] + ' ' + p.name + '</span></div>';
+// RENDER PLAN
+function renderPhaseLegend(){
+  var html="";
+  for(var i=0;i<PHASES.length;i++){
+    var p=PHASES[i];
+    html+='<div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#cbd5e1;"><div style="width:8px;height:8px;border-radius:2px;background:'+p.color+';flex-shrink:0;"></div><span>S'+p.weeks[0]+'–S'+p.weeks[p.weeks.length-1]+' '+p.name+'</span></div>';
   }
-  document.getElementById("phase-legend").innerHTML = html;
+  document.getElementById("phase-legend").innerHTML=html;
 }
-
-function renderBars() {
-  var maxKm = 0;
-  for (var i = 0; i < plan.length; i++) { var km = totalKm(plan[i]); if (km > maxKm) maxKm = km; }
-  var barsHtml = "", btnsHtml = "";
-  for (var i = 0; i < plan.length; i++) {
-    var n = i+1, ph = getPhase(n), km = totalKm(plan[i]);
-    var h = Math.max(4, (km/maxKm)*46);
-    var runs = 0, done = 0;
-    for (var di = 0; di < plan[i].length; di++) {
-      if (plan[i][di].isRun) { runs++; if (getSession(n,di).done) done++; }
-    }
-    var allDone = runs > 0 && done === runs;
-    var bg = n === selWeek ? ph.color : (allDone ? "#10b981aa" : ph.color + "55");
-    barsHtml += '<div class="bar-wrap" onclick="selectWeek(' + n + ')"><div class="bar" style="height:' + h + 'px;background:' + bg + ';"></div></div>';
-    var btnActive = n === selWeek;
-    btnsHtml += '<button class="week-btn' + (btnActive?" active":"") + '" style="background:' + (btnActive?ph.color:"#1e293b") + ';color:' + (btnActive?"#fff":"#64748b") + ';" onclick="selectWeek(' + n + ')">S' + n + '</button>';
+function renderBars(){
+  var maxKm=0;
+  for(var i=0;i<plan.length;i++){var km=totalKm(plan[i]);if(km>maxKm)maxKm=km;}
+  var bHtml="",wHtml="";
+  for(var i=0;i<plan.length;i++){
+    var n=i+1,ph=getPhase(n),km=totalKm(plan[i]);
+    var h=Math.max(4,(km/maxKm)*46);
+    var runs=0,done=0;
+    for(var di=0;di<plan[i].length;di++){if(plan[i][di].isRun){runs++;if(getSession(n,di).done)done++;}}
+    var allDone=runs>0&&done===runs;
+    var bg=n===selWeek?ph.color:(allDone?"#10b981aa":ph.color+"55");
+    bHtml+='<div class="bar-wrap" onclick="selectWeek('+n+')"><div class="bar" style="height:'+h+'px;background:'+bg+';"></div></div>';
+    wHtml+='<button class="week-btn'+(n===selWeek?" active":""),style="background:'+(n===selWeek?ph.color:"#1e293b")+';color:'+(n===selWeek?"#fff":"#64748b")+'" onclick="selectWeek('+n+')">S'+n+'</button>';
   }
-  document.getElementById("bars").innerHTML = barsHtml;
-  document.getElementById("week-btns").innerHTML = btnsHtml;
+  document.getElementById("bars").innerHTML=bHtml;
+  document.getElementById("week-btns").innerHTML=wHtml;
 }
+function renderWeek(){
+  var ph=getPhase(selWeek),w=plan[selWeek-1];
+  var runs=0,done=0;
+  for(var di=0;di<w.length;di++){if(w[di].isRun){runs++;if(getSession(selWeek,di).done)done++;}}
+  var card=document.getElementById("week-card");
+  card.style.borderLeft="4px solid "+ph.color;
+  var html='<div class="week-header"><div><div style="font-size:17px;font-weight:700;">Semaine '+selWeek+'</div><div style="font-size:11px;color:#64748b;margin-top:2px;">'+weekLabel(selWeek)+'</div><div class="phase-badge" style="background:'+ph.color+'33;color:'+ph.color+';">'+ph.name+'</div></div><div style="text-align:right;"><div style="font-size:22px;font-weight:700;color:'+ph.color+';">'+totalKm(w)+' km</div><div style="font-size:10px;color:#64748b;">'+runs+' sorties · '+done+' réalisées</div></div></div>';
 
-function renderWeek() {
-  var ph = getPhase(selWeek);
-  var w = plan[selWeek-1];
-  var runs = 0, done = 0;
-  for (var di = 0; di < w.length; di++) { if (w[di].isRun) { runs++; if (getSession(selWeek,di).done) done++; } }
-  var card = document.getElementById("week-card");
-  card.style.borderLeft = "4px solid " + ph.color;
-  var html = '<div class="week-header"><div><div style="font-size:17px;font-weight:700;">Semaine ' + selWeek + '</div><div style="font-size:11px;color:#64748b;margin-top:2px;">' + weekLabel(selWeek) + '</div><div class="phase-badge" style="background:' + ph.color + '33;color:' + ph.color + ';">' + ph.name + '</div></div><div style="text-align:right;"><div style="font-size:22px;font-weight:700;color:' + ph.color + ';">' + totalKm(w) + ' km</div><div style="font-size:10px;color:#64748b;">' + runs + ' sorties · ' + done + ' réalisées</div></div></div>';
-
-  for (var di = 0; di < w.length; di++) {
-    var s = w[di];
-    var sess = getSession(selWeek, di);
-    var isExp = expandedDay === di;
-    var target = RPE_TARGET[s.type];
-    var comment = rpeComment(sess.rpe, target, s.type);
-    var timeSec = parseTime(sess.time);
-    var distNum = parseFloat(sess.distReal) || null;
-    var pace = calcPace(timeSec, distNum || s.km);
-    var borderColor = sess.done ? "#10b981" : (TC[s.type] || "#6b7280");
-
-    var badges = "";
-    if (sess.distReal) badges += '<span class="badge" style="background:#1e3a5f;color:#93c5fd;">→ ' + sess.distReal + 'km</span> ';
-    if (pace)          badges += '<span class="badge" style="background:#14532d22;color:#86efac;">' + pace + '/km</span> ';
-    if (sess.fcm)      badges += '<span class="badge" style="background:#7f1d1d22;color:#fca5a5;">♥ ' + sess.fcm + 'bpm</span> ';
-    if (sess.rpe)      badges += '<span class="badge" style="background:' + rpeColor(sess.rpe) + '22;color:' + rpeColor(sess.rpe) + ';">RPE ' + sess.rpe + '</span> ';
-
-    html += '<div class="day-row" style="border-left:3px solid ' + borderColor + ';">';
-    html += '<div class="day-summary"' + (s.isRun ? ' style="cursor:pointer;" onclick="toggleExpand(' + di + ')"' : '') + '>';
-    if (s.isRun) {
-      html += '<div class="chk' + (sess.done?" done":"") + '" onclick="event.stopPropagation();toggleDone(' + di + ')">' + (sess.done?"✓":"") + '</div>';
-    } else {
-      html += '<div style="width:20px;flex-shrink:0;"></div>';
+  for(var di=0;di<w.length;di++){
+    var s=w[di];
+    var sess=getSession(selWeek,di);
+    var isExp=expandedDay===di;
+    var target=RPE_TARGET[s.type];
+    var comment=rpeComment(sess.rpe,target,s.type);
+    var timeSec=parseTime(sess.time);
+    var distNum=parseFloat(sess.distReal)||null;
+    var pace=calcPace(timeSec,distNum||s.km);
+    var borderColor=sess.done?"#10b981":(TC[s.type]||"#6b7280");
+    var badges="";
+    if(sess.distReal)badges+='<span class="badge" style="background:#1e3a5f;color:#93c5fd;">'+sess.distReal+'km</span> ';
+    if(pace)badges+='<span class="badge" style="background:#14532d22;color:#86efac;">'+pace+'/km</span> ';
+    if(sess.fcm)badges+='<span class="badge" style="background:#7f1d1d22;color:#fca5a5;">♥ '+sess.fcm+'bpm</span> ';
+    if(sess.rpe)badges+='<span class="badge" style="background:'+rpeColor(sess.rpe)+'22;color:'+rpeColor(sess.rpe)+';">RPE '+sess.rpe+'</span> ';
+    // Activity badges
+    var acts=getActivities(selWeek,di);
+    for(var ai=0;ai<acts.length;ai++){
+      var ac=acts[ai];
+      var acColor=ACT_COLORS[ac.type]||"#94a3b8";
+      badges+='<span class="badge" style="background:'+acColor+'22;color:'+acColor+';">'+ac.type+(ac.duration?" "+ac.duration+"mn":"")+(ac.rpe?" RPE"+ac.rpe:"")+'</span> ';
     }
-    html += '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:10px;font-weight:700;color:#64748b;">' + JOURS[di] + '</span><span class="type-badge" style="background:' + (TC[s.type]||"#6b7280") + '22;color:' + (TC[s.type]||"#6b7280") + ';">' + s.type + '</span>' + (s.km>0?'<span style="font-size:11px;color:#64748b;">' + s.km + ' km prévu</span>':"") + badges + '</div><div class="day-detail">' + s.detail + '</div></div>';
-    if (s.isRun) html += '<span style="color:#475569;font-size:12px;margin-left:auto;">' + (isExp?"▲":"▼") + '</span>';
-    html += '</div>';
 
-    if (s.isRun && isExp) {
-      html += '<div class="day-panel">';
-      html += '<div class="fields-grid">';
-      html += '<div class="field-block"><label>Temps réalisé</label><input type="text" placeholder="ex: 48:32" value="' + (sess.time||"") + '" oninput="updateField(' + di + ',\'time\',this.value)"/></div>';
-      html += '<div class="field-block"><label>Distance réelle (km)</label><input type="number" step="0.1" placeholder="' + s.km + '" value="' + (sess.distReal||"") + '" oninput="updateField(' + di + ',\'distReal\',this.value)"/></div>';
-      html += '<div class="field-block"><label>FC max (bpm)</label><input type="number" placeholder="ex: 172" value="' + (sess.fcm||"") + '" oninput="updateField(' + di + ',\'fcm\',this.value)"/></div>';
-      html += '<div class="field-block"><label>Allure calculée</label><div class="pace-box" style="color:' + (pace?"#86efac":"#475569") + ';">' + (pace ? pace+" /km" : "Saisir temps + distance") + '</div></div>';
-      html += '</div>';
-      html += '<div style="margin-top:12px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:11px;color:#64748b;">RPE ressenti</span>' + (target?'<span style="font-size:11px;color:#475569;">cible : ' + target + '/10</span>':"") + '</div><div class="rpe-row">';
-      for (var r = 1; r <= 10; r++) {
-        var isSelRpe = sess.rpe === r;
-        html += '<button class="rpe-btn" style="background:' + (isSelRpe?rpeColor(r):"#1e293b") + ';color:' + (isSelRpe?"#fff":"#64748b") + ';" onclick="updateRPE(' + di + ',' + r + ')">' + r + '</button>';
+    html+='<div class="day-row" style="border-left:3px solid '+borderColor+';">';
+    html+='<div class="day-summary"'+(s.isRun||!s.isRun?' style="cursor:pointer;" onclick="toggleExpand('+di+')"':'')+' >';
+    if(s.isRun){
+      html+='<div class="chk'+(sess.done?" done":""),onclick="event.stopPropagation();toggleDone('+di+')">'+(sess.done?"✓":"")+'</div>';
+    }else{
+      html+='<div style="width:20px;flex-shrink:0;"></div>';
+    }
+    html+='<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:10px;font-weight:700;color:#64748b;">'+JOURS[di]+'</span><span class="type-badge" style="background:'+(TC[s.type]||"#6b7280")+'22;color:'+(TC[s.type]||"#6b7280")+';">'+s.type+'</span>'+(s.km>0?'<span style="font-size:11px;color:#64748b;">'+s.km+' km prévu</span>':"")+badges+'</div><div class="day-detail">'+s.detail+'</div></div>';
+    html+='<span style="color:#475569;font-size:12px;margin-left:auto;">'+(isExp?"▲":"▼")+'</span>';
+    html+='</div>';
+
+    if(isExp){
+      html+='<div class="day-panel">';
+      if(s.isRun){
+        html+='<div class="fields-grid">';
+        html+='<div class="field-block"><label>Temps réalisé</label><input type="text" placeholder="ex: 48:32" value="'+(sess.time||"")+'" oninput="updateField('+di+',\'time\',this.value)"/></div>';
+        html+='<div class="field-block"><label>Distance réelle (km)</label><input type="number" step="0.1" placeholder="'+s.km+'" value="'+(sess.distReal||"")+'" oninput="updateField('+di+',\'distReal\',this.value)"/></div>';
+        html+='<div class="field-block"><label>FC max (bpm)</label><input type="number" placeholder="ex: 172" value="'+(sess.fcm||"")+'" oninput="updateField('+di+',\'fcm\',this.value)"/></div>';
+        html+='<div class="field-block"><label>Allure calculée</label><div class="pace-box" style="color:'+(pace?"#86efac":"#475569")+';">'+(pace?pace+" /km":"Saisir temps + distance")+'</div></div>';
+        html+='</div>';
+        html+='<div style="margin-top:12px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:11px;color:#64748b;">RPE ressenti</span>'+(target?'<span style="font-size:11px;color:#475569;">cible : '+target+'/10</span>':"")+' </div><div class="rpe-row">';
+        for(var r=1;r<=10;r++){
+          var isSelRpe=sess.rpe===r;
+          html+='<button class="rpe-btn" style="background:'+(isSelRpe?rpeColor(r):"#1e293b")+';color:'+(isSelRpe?"#fff":"#64748b")+'" onclick="updateRPE('+di+','+r+')">'+r+'</button>';
+        }
+        html+='</div></div>';
+        if(comment)html+='<div class="comment-box" style="color:'+rpeColor(sess.rpe)+';background:'+rpeColor(sess.rpe)+'18;">'+comment+'</div>';
+        if(!sess.done)html+='<button class="report-btn" onclick="reportSession('+(selWeek-1)+','+di+')">Reporter cette séance →</button>';
+        html+='<div style="margin-top:10px;border-top:1px solid #334155;padding-top:10px;">';
       }
-      html += '</div></div>';
-      if (comment) html += '<div class="comment-box" style="color:' + rpeColor(sess.rpe) + ';background:' + rpeColor(sess.rpe) + '18;">' + comment + '</div>';
-      if (!sess.done) html += '<button class="report-btn" onclick="reportSession(' + (selWeek-1) + ',' + di + ')">Reporter cette séance →</button>';
-      html += '</div>';
+      // Activities section
+      html+='<div style="margin-top:'+(s.isRun?'0':'12')+'px;">';
+      html+='<div style="font-size:11px;color:#64748b;margin-bottom:6px;">Activités complémentaires</div>';
+      var acts2=getActivities(selWeek,di);
+      for(var ai=0;ai<acts2.length;ai++){
+        var ac2=acts2[ai];
+        var acColor2=ACT_COLORS[ac2.type]||"#94a3b8";
+        html+='<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:#1e293b;border-radius:6px;margin-bottom:4px;font-size:12px;">';
+        html+='<span style="color:'+acColor2+';font-weight:700;">'+ac2.type+'</span>';
+        if(ac2.duration)html+='<span style="color:#94a3b8;">'+ac2.duration+'mn</span>';
+        if(ac2.rpe)html+='<span style="background:'+rpeColor(ac2.rpe)+'22;color:'+rpeColor(ac2.rpe)+';padding:1px 6px;border-radius:99px;font-size:11px;">RPE '+ac2.rpe+'</span>';
+        if(ac2.note)html+='<span style="color:#64748b;font-size:11px;">'+ac2.note+'</span>';
+        html+='<button onclick="deleteActivity('+selWeek+','+di+','+ai+')" style="margin-left:auto;background:transparent;border:none;color:#475569;font-size:13px;cursor:pointer;">✕</button>';
+        html+='</div>';
+      }
+      html+='<button onclick="openModal('+selWeek+','+di+')" style="font-size:12px;padding:4px 12px;border-radius:99px;border:1px solid #334155;background:transparent;color:#94a3b8;margin-top:4px;">+ Ajouter une activité</button>';
+      html+='</div>';
+      if(s.isRun)html+='</div>';
+      html+='</div>';
     }
-    html += '</div>';
+    html+='</div>';
   }
-  card.innerHTML = html;
+  card.innerHTML=html;
 }
 
-function renderRenfo() {
-  var html = "";
-  for (var i = 0; i < RENFO.length; i++) {
-    html += '<div class="renfo-item"><div class="renfo-num">' + (i+1) + '</div><div><div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:2px;">' + RENFO[i].nom + '</div><div style="font-size:12px;color:#94a3b8;">' + RENFO[i].detail + '</div></div></div>';
+function renderRenfo(){
+  var html="";
+  for(var i=0;i<RENFO.length;i++){
+    html+='<div class="renfo-item"><div class="renfo-num">'+(i+1)+'</div><div><div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:2px;">'+RENFO[i].nom+'</div><div style="font-size:12px;color:#94a3b8;">'+RENFO[i].detail+'</div></div></div>';
   }
-  document.getElementById("renfo-list").innerHTML = html;
+  document.getElementById("renfo-list").innerHTML=html;
+}
+function renderAllures(){
+  var html="";
+  var keys=Object.keys(ALLURES);
+  for(var i=0;i<keys.length;i++){
+    html+='<div class="allure-row"><span style="font-size:13px;color:#94a3b8;">'+keys[i]+'</span><span style="font-size:14px;font-weight:700;color:#f1f5f9;">'+ALLURES[keys[i]]+'</span></div>';
+  }
+  document.getElementById("allures-list").innerHTML=html;
 }
 
-function renderAllures() {
-  var html = "";
-  var keys = Object.keys(ALLURES);
-  for (var i = 0; i < keys.length; i++) {
-    html += '<div class="allure-row"><span style="font-size:13px;color:#94a3b8;">' + keys[i] + '</span><span style="font-size:14px;font-weight:700;color:#f1f5f9;">' + ALLURES[keys[i]] + '</span></div>';
-  }
-  document.getElementById("allures-list").innerHTML = html;
-}
-
-// ── ACTIONS ───────────────────────────────────────────────────────────────────
-function selectWeek(n) { selWeek = n; expandedDay = null; renderBars(); renderWeek(); }
-function toggleExpand(di) { expandedDay = expandedDay === di ? null : di; renderWeek(); }
-function toggleDone(di) {
-  var sess = getSession(selWeek, di);
-  saveSession(selWeek, di, {done: !sess.done});
-}
-function updateField(di, field, val) {
-  var key = skey(selWeek, di);
-  var cur = sessions[key] || {done:false,rpe:null,time:"",distReal:"",fcm:""};
-  cur[field] = val;
-  sessions[key] = cur;
+// ACTIONS
+function selectWeek(n){selWeek=n;expandedDay=null;renderBars();renderWeek();}
+function toggleExpand(di){expandedDay=expandedDay===di?null:di;renderWeek();}
+function toggleDone(di){var sess=getSession(selWeek,di);saveSession(selWeek,di,{done:!sess.done});}
+function updateField(di,field,val){
+  var key=skey(selWeek,di);
+  var cur=sessions[key]||{done:false,rpe:null,time:"",distReal:"",fcm:""};
+  cur[field]=val;sessions[key]=cur;
   clearTimeout(debounceTimers[di+""+field]);
-  debounceTimers[di+""+field] = setTimeout(function() { saveSession(selWeek, di, {}); }, 800);
+  debounceTimers[di+""+field]=setTimeout(function(){saveSession(selWeek,di,{});},800);
   renderWeek();
 }
-function updateRPE(di, r) {
-  var sess = getSession(selWeek, di);
-  saveSession(selWeek, di, {rpe: sess.rpe === r ? null : r});
-}
-function reportSession(wIdx, dIdx) {
-  var sess = plan[wIdx][dIdx];
-  plan[wIdx][dIdx] = {type:"Repos",detail:"Séance non réalisée (reportée)",km:0,isRun:false};
-  var placed = false;
-  for (var wi = wIdx; wi < plan.length && !placed; wi++) {
-    for (var di = (wi === wIdx ? dIdx+1 : 0); di < 7 && !placed; di++) {
-      var s = plan[wi][di];
-      if (!s.isRun && (s.type === "Repos/vélo" || s.type === "Repos")) {
-        plan[wi][di] = {type:"Reporté",detail:"[Reporté] "+sess.detail,km:sess.km,isRun:true};
-        placed = true;
+function updateRPE(di,r){var sess=getSession(selWeek,di);saveSession(selWeek,di,{rpe:sess.rpe===r?null:r});}
+function reportSession(wIdx,dIdx){
+  var sess=plan[wIdx][dIdx];
+  plan[wIdx][dIdx]={type:"Repos",detail:"Séance non réalisée (reportée)",km:0,isRun:false};
+  var placed=false;
+  for(var wi=wIdx;wi<plan.length&&!placed;wi++){
+    for(var di=(wi===wIdx?dIdx+1:0);di<7&&!placed;di++){
+      var s=plan[wi][di];
+      if(!s.isRun&&(s.type==="Repos/vélo"||s.type==="Repos")){
+        plan[wi][di]={type:"Reporté",detail:"[Reporté] "+sess.detail,km:sess.km,isRun:true};
+        placed=true;
       }
     }
   }
-  savePlan();
-  renderWeek();
+  savePlan();renderWeek();
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
+// STATS
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function renderStats(){
+  // Collect all run sessions
+  var allRuns=[];
+  for(var wi=0;wi<plan.length;wi++){
+    var wk=plan[wi];
+    for(var di=0;di<wk.length;di++){
+      var s=wk[di];
+      if(!s.isRun)continue;
+      var sess=getSession(wi+1,di);
+      var timeSec=parseTime(sess.time);
+      var distNum=parseFloat(sess.distReal)||null;
+      var paceSec=calcPaceSec(timeSec,distNum||s.km);
+      allRuns.push({week:wi+1,day:di,type:s.type,kmPlan:s.km,kmReal:distNum,timeSec:timeSec,paceSec:paceSec,fcm:parseInt(sess.fcm)||null,rpe:sess.rpe,done:sess.done});
+    }
+  }
+  // Collect all activities
+  var allActs=[];
+  for(var wi=0;wi<23;wi++){
+    for(var di=0;di<7;di++){
+      var acts=getActivities(wi+1,di);
+      for(var ai=0;ai<acts.length;ai++){
+        allActs.push({week:wi+1,day:di,type:acts[ai].type,duration:acts[ai].duration,rpe:acts[ai].rpe});
+      }
+    }
+  }
+
+  renderKPIs(allRuns);
+  renderPrediction(allRuns);
+  renderChargeChart(allRuns,allActs);
+  renderPrevRealChart();
+  renderAllureChart(allRuns);
+  renderFcmChart(allRuns);
+  renderRpeChart(allRuns);
+  renderRatio(allRuns);
+  renderFatigueChart(allRuns,allActs);
+  renderRecords(allRuns);
+  renderConsistency();
+  renderHistory(allRuns);
+}
+
+function renderKPIs(allRuns){
+  var totalKmRun=0,totalSec=0,doneSessions=0,totalSessions=0;
+  for(var i=0;i<allRuns.length;i++){
+    totalSessions++;
+    if(allRuns[i].done){
+      doneSessions++;
+      totalKmRun+=(allRuns[i].kmReal||allRuns[i].kmPlan);
+      if(allRuns[i].timeSec)totalSec+=allRuns[i].timeSec;
+    }
+  }
+  var kmLeft=42.195;// marathon
+  var totalPlannedKm=0;
+  for(var wi=0;wi<plan.length;wi++){for(var di=0;di<plan[wi].length;di++){if(plan[wi][di].isRun)totalPlannedKm+=plan[wi][di].km;}}
+  var completePct=totalSessions>0?Math.round(doneSessions/totalSessions*100):0;
+  var html='';
+  html+=kpiCard(Math.round(totalKmRun)+" km","Km parcourus","depuis le début du plan","#3b82f6");
+  html+=kpiCard(completePct+"%","Complétion",""+doneSessions+"/"+totalSessions+" séances réalisées","#22c55e");
+  html+=kpiCard(totalSec>0?fmtTime(totalSec):"—","Temps total","de course cumulé","#8b5cf6");
+  html+=kpiCard(Math.round(totalPlannedKm-totalKmRun)+" km","Km restants","jusqu'au marathon","#f59e0b");
+  document.getElementById("stats-kpis").innerHTML=html;
+}
+function kpiCard(val,label,sub,color){
+  return '<div class="stat-card"><div class="stat-label">'+label+'</div><div class="stat-value" style="color:'+color+';">'+val+'</div><div class="stat-sub">'+sub+'</div></div>';
+}
+
+function renderPrediction(allRuns){
+  // Predict marathon time from best tempo pace
+  var bestTempoPace=null,bestLongPace=null;
+  for(var i=0;i<allRuns.length;i++){
+    var r=allRuns[i];
+    if(!r.paceSec||!r.done)continue;
+    if(r.type==="Tempo"&&(!bestTempoPace||r.paceSec<bestTempoPace))bestTempoPace=r.paceSec;
+    if(r.type==="Sortie longue"&&(!bestLongPace||r.paceSec<bestLongPace))bestLongPace=r.paceSec;
+  }
+  var predSec=null;
+  if(bestTempoPace){predSec=Math.round(bestTempoPace*1.12*42.195);}
+  else if(bestLongPace){predSec=Math.round(bestLongPace*1.05*42.195);}
+  var predText=predSec?fmtTime(predSec):"Pas encore assez de données";
+  var target=3*3600+30*60;
+  var diff=predSec?predSec-target:null;
+  var diffText="",diffColor="#94a3b8";
+  if(diff!==null){
+    if(diff<0){diffText="En avance de "+fmtTime(Math.abs(diff))+" sur l'objectif";diffColor="#22c55e";}
+    else if(diff===0){diffText="Exactement dans l'objectif";diffColor="#22c55e";}
+    else{diffText="Retard de "+fmtTime(diff)+" sur l'objectif";diffColor="#f59e0b";}
+  }
+  document.getElementById("stats-prediction").innerHTML='<div class="chart-title">Prédiction marathon</div><div style="text-align:center;padding:20px 0;"><div style="font-size:36px;font-weight:700;color:#3b82f6;">'+predText+'</div><div style="font-size:12px;color:'+diffColor+';margin-top:8px;">'+diffText+'</div><div style="font-size:11px;color:#475569;margin-top:6px;">Basée sur tes meilleures allures tempo/longue</div></div>';
+}
+
+function renderChargeChart(allRuns,allActs){
+  var weekCharge=[];
+  for(var wi=1;wi<=23;wi++){
+    var charge=0,count=0;
+    for(var i=0;i<allRuns.length;i++){
+      if(allRuns[i].week===wi&&allRuns[i].done&&allRuns[i].rpe){
+        charge+=(allRuns[i].kmReal||allRuns[i].kmPlan)*allRuns[i].rpe;count++;
+      }
+    }
+    for(var i=0;i<allActs.length;i++){
+      if(allActs[i].week===wi&&allActs[i].rpe&&allActs[i].duration){
+        charge+=(allActs[i].duration/10)*allActs[i].rpe;
+      }
+    }
+    weekCharge.push(Math.round(charge));
+  }
+  destroyChart("charge");
+  var ctx=document.getElementById("chart-charge").getContext("2d");
+  charts["charge"]=new Chart(ctx,{type:"bar",data:{labels:Array.from({length:23},function(_,i){return"S"+(i+1);}),datasets:[{label:"Charge",data:weekCharge,backgroundColor:"#3b82f688",borderColor:"#3b82f6",borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#64748b",font:{size:10}}},y:{ticks:{color:"#64748b",font:{size:10}}}}}});
+}
+
+function renderPrevRealChart(){
+  var planned=[],real=[];
+  for(var wi=0;wi<plan.length;wi++){
+    var p=totalKm(plan[wi]);planned.push(p);
+    var r=0;
+    for(var di=0;di<plan[wi].length;di++){
+      if(plan[wi][di].isRun){
+        var sess=getSession(wi+1,di);
+        if(sess.done)r+=parseFloat(sess.distReal)||plan[wi][di].km;
+      }
+    }
+    real.push(Math.round(r*10)/10);
+  }
+  destroyChart("prevreal");
+  var ctx=document.getElementById("chart-prevreal").getContext("2d");
+  charts["prevreal"]=new Chart(ctx,{type:"bar",data:{labels:Array.from({length:23},function(_,i){return"S"+(i+1);}),datasets:[{label:"Prévu",data:planned,backgroundColor:"#33415588"},{label:"Réalisé",data:real,backgroundColor:"#22c55e88"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#64748b",font:{size:10}}},y:{ticks:{color:"#64748b",font:{size:10}}}}}});
+  // Custom legend
+  var legendHtml='<div style="display:flex;gap:16px;margin-bottom:8px;font-size:12px;color:#94a3b8;"><span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#334155;display:inline-block;"></span>Prévu</span><span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#22c55e88;display:inline-block;"></span>Réalisé</span></div>';
+  document.getElementById("chart-prevreal").parentNode.insertAdjacentHTML("afterbegin",legendHtml);
+}
+
+function renderAllureChart(allRuns){
+  var types=["Footing facile","Tempo","Sortie longue"];
+  var colors=["#3b82f6","#f59e0b","#8b5cf6"];
+  var datasets=[];
+  for(var t=0;t<types.length;t++){
+    var data=new Array(23).fill(null);
+    for(var i=0;i<allRuns.length;i++){
+      var r=allRuns[i];
+      if(r.type===types[t]&&r.done&&r.paceSec){
+        var wi=r.week-1;
+        if(data[wi]===null||r.paceSec<data[wi])data[wi]=r.paceSec;
+      }
+    }
+    datasets.push({label:types[t],data:data,borderColor:colors[t],backgroundColor:"transparent",tension:0.3,spanGaps:true,pointRadius:3});
+  }
+  destroyChart("allure");
+  var ctx=document.getElementById("chart-allure").getContext("2d");
+  charts["allure"]=new Chart(ctx,{type:"line",data:{labels:Array.from({length:23},function(_,i){return"S"+(i+1);}),datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#64748b",font:{size:10}}},y:{reverse:true,ticks:{color:"#64748b",font:{size:10},callback:function(v){return fmtTime(v)+"/km";}}}}}});
+}
+
+function renderFcmChart(allRuns){
+  var labels=[],data=[];
+  for(var i=0;i<allRuns.length;i++){
+    var r=allRuns[i];
+    if(r.done&&r.fcm){labels.push("S"+r.week+" "+JOURS[r.day]);data.push(r.fcm);}
+  }
+  destroyChart("fcm");
+  var ctx=document.getElementById("chart-fcm").getContext("2d");
+  charts["fcm"]=new Chart(ctx,{type:"line",data:{labels:labels,datasets:[{label:"FCM",data:data,borderColor:"#ef4444",backgroundColor:"#ef444422",tension:0.3,fill:true,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#64748b",font:{size:9},maxRotation:45}},y:{ticks:{color:"#64748b",font:{size:10}}}}}});
+}
+
+function renderRpeChart(allRuns){
+  var labels=[],actual=[],target=[];
+  for(var i=0;i<allRuns.length;i++){
+    var r=allRuns[i];
+    if(r.done&&r.rpe){
+      labels.push("S"+r.week+" "+r.type.substring(0,3)+".");
+      actual.push(r.rpe);
+      target.push(RPE_TARGET[r.type]||5);
+    }
+  }
+  destroyChart("rpe");
+  var ctx=document.getElementById("chart-rpe").getContext("2d");
+  charts["rpe"]=new Chart(ctx,{type:"line",data:{labels:labels,datasets:[{label:"Ressenti",data:actual,borderColor:"#f59e0b",tension:0.3,pointRadius:3},{label:"Cible",data:target,borderColor:"#334155",borderDash:[4,4],tension:0,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#64748b",font:{size:9},maxRotation:45}},y:{min:1,max:10,ticks:{color:"#64748b",font:{size:10}}}}}});
+}
+
+function renderRatio(allRuns){
+  var easyKm=0,hardKm=0;
+  for(var i=0;i<allRuns.length;i++){
+    var r=allRuns[i];
+    if(!r.done)continue;
+    var km=r.kmReal||r.kmPlan;
+    if(r.type==="Footing facile")easyKm+=km;
+    else hardKm+=km;
+  }
+  var total=easyKm+hardKm;
+  var easyPct=total>0?Math.round(easyKm/total*100):0;
+  var hardPct=100-easyPct;
+  document.getElementById("stats-ratio").innerHTML='<div class="chart-title">Ratio intensité — règle des 80/20</div><div style="margin-top:16px;"><div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;margin-bottom:4px;"><span>Facile: '+easyPct+'%</span><span>Intense: '+hardPct+'%</span></div><div class="ratio-bar-wrap"><div style="display:flex;height:100%;border-radius:99px;overflow:hidden;"><div style="width:'+easyPct+'%;background:#22c55e;"></div><div style="width:'+hardPct+'%;background:#ef4444;"></div></div></div><div style="font-size:11px;color:'+(Math.abs(easyPct-80)<=10?"#22c55e":"#f59e0b")+'margin-top:8px;text-align:center;">'+(total===0?"Pas encore de données":Math.abs(easyPct-80)<=10?"Dans la cible 80/20":"Objectif : 80% facile / 20% intense")+'</div></div>';
+}
+
+function renderFatigueChart(allRuns,allActs){
+  var fatigue=new Array(23).fill(0);
+  // Accumulate: each week adds charge, recovery reduces it
+  for(var wi=0;wi<23;wi++){
+    var load=0;
+    for(var i=0;i<allRuns.length;i++){
+      var r=allRuns[i];
+      if(r.week===wi+1&&r.done){load+=(r.kmReal||r.kmPlan)*(r.rpe||5);}
+    }
+    for(var i=0;i<allActs.length;i++){
+      var a=allActs[i];
+      if(a.week===wi+1&&a.duration){load+=(a.duration/10)*(a.rpe||4);}
+    }
+    var prev=wi>0?fatigue[wi-1]:0;
+    fatigue[wi]=Math.round(prev*0.85+load);
+  }
+  destroyChart("fatigue");
+  var ctx=document.getElementById("chart-fatigue").getContext("2d");
+  charts["fatigue"]=new Chart(ctx,{type:"line",data:{labels:Array.from({length:23},function(_,i){return"S"+(i+1);}),datasets:[{label:"Fatigue",data:fatigue,borderColor:"#8b5cf6",backgroundColor:"#8b5cf622",fill:true,tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#64748b",font:{size:10}}},y:{ticks:{color:"#64748b",font:{size:10}}}}}});
+}
+
+function renderRecords(allRuns){
+  var bestTempo=null,bestLong=null,bestFrac=null,lowestFcm=null;
+  for(var i=0;i<allRuns.length;i++){
+    var r=allRuns[i];
+    if(!r.done)continue;
+    if(r.paceSec){
+      if(r.type==="Tempo"&&(!bestTempo||r.paceSec<bestTempo.pace)){bestTempo={pace:r.paceSec,week:r.week};}
+      if(r.type==="Sortie longue"&&(!bestLong||r.paceSec<bestLong.pace)){bestLong={pace:r.paceSec,week:r.week,km:r.kmReal||r.kmPlan};}
+      if(r.type==="Fractionné"&&(!bestFrac||r.paceSec<bestFrac.pace)){bestFrac={pace:r.paceSec,week:r.week};}
+    }
+    if(r.fcm&&(!lowestFcm||r.fcm<lowestFcm.val)){lowestFcm={val:r.fcm,week:r.week,type:r.type};}
+  }
+  var rows="";
+  if(bestTempo)rows+='<tr><td>Meilleure allure tempo</td><td style="color:#f59e0b;font-weight:700;">'+fmtTime(bestTempo.pace)+'/km</td><td style="color:#64748b;">S'+bestTempo.week+'</td></tr>';
+  if(bestLong)rows+='<tr><td>Meilleure allure sortie longue</td><td style="color:#8b5cf6;font-weight:700;">'+fmtTime(bestLong.pace)+'/km</td><td style="color:#64748b;">S'+bestLong.week+' ('+bestLong.km+'km)</td></tr>';
+  if(bestFrac)rows+='<tr><td>Meilleure allure fractionné</td><td style="color:#ef4444;font-weight:700;">'+fmtTime(bestFrac.pace)+'/km</td><td style="color:#64748b;">S'+bestFrac.week+'</td></tr>';
+  if(lowestFcm)rows+='<tr><td>FC max la plus basse</td><td style="color:#22c55e;font-weight:700;">'+lowestFcm.val+' bpm</td><td style="color:#64748b;">S'+lowestFcm.week+' — '+lowestFcm.type+'</td></tr>';
+  if(!rows)rows='<tr><td colspan="3" style="color:#475569;text-align:center;padding:16px;">Complète des séances pour voir tes records</td></tr>';
+  document.getElementById("stats-records").innerHTML='<table class="records-table"><thead><tr><th>Record</th><th>Valeur</th><th>Semaine</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function renderConsistency(){
+  var html='<div style="display:flex;gap:3px;margin-bottom:4px;">';
+  html+='<div style="width:24px;"></div>';
+  for(var di=0;di<7;di++)html+='<div style="width:12px;font-size:9px;color:#475569;text-align:center;">'+JOURS[di].charAt(0)+'</div>';
+  html+='</div>';
+  for(var wi=0;wi<23;wi++){
+    html+='<div style="display:flex;gap:3px;margin-bottom:3px;align-items:center;">';
+    html+='<div style="width:24px;font-size:9px;color:#475569;">S'+(wi+1)+'</div>';
+    for(var di=0;di<7;di++){
+      var s=plan[wi][di];
+      var sess=getSession(wi+1,di);
+      var acts=getActivities(wi+1,di);
+      var color="#1e293b";
+      if(s.isRun){color=sess.done?"#22c55e":"#334155";}
+      else if(acts.length>0){color="#06b6d455";}
+      else if(s.type==="Repos"||s.type==="Repos/vélo"){color="#0f172a";}
+      else{color="#1e293b";}
+      html+='<div style="width:12px;height:12px;border-radius:2px;background:'+color+';flex-shrink:0;" title="S'+(wi+1)+' '+JOURS[di]+'"></div>';
+    }
+    html+='</div>';
+  }
+  html+='<div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:#64748b;">';
+  html+='<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#22c55e;margin-right:4px;"></span>Séance réalisée</span>';
+  html+='<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#334155;margin-right:4px;"></span>Séance prévue</span>';
+  html+='<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#06b6d455;margin-right:4px;"></span>Activité complémentaire</span>';
+  html+='</div>';
+  document.getElementById("stats-consistency").innerHTML=html;
+}
+
+function renderHistory(allRuns){
+  var rows="<tr><th>Semaine</th><th>Jour</th><th>Type</th><th>Prévu</th><th>Réalisé</th><th>Temps</th><th>Allure</th><th>FCM</th><th>RPE</th></tr>";
+  var done=[];
+  for(var i=0;i<allRuns.length;i++){if(allRuns[i].done)done.push(allRuns[i]);}
+  done.reverse();
+  for(var i=0;i<done.length;i++){
+    var r=done[i];
+    var ph=getPhase(r.week);
+    rows+='<tr><td style="color:'+ph.color+';">S'+r.week+'</td><td>'+JOURS[r.day]+'</td><td>'+r.type+'</td><td>'+r.kmPlan+'km</td><td>'+(r.kmReal?r.kmReal+'km':'—')+'</td><td>'+(r.timeSec?fmtTime(r.timeSec):'—')+'</td><td style="color:#86efac;">'+(r.paceSec?fmtTime(r.paceSec)+'/km':'—')+'</td><td style="color:#fca5a5;">'+(r.fcm?r.fcm+'bpm':'—')+'</td><td style="color:'+(r.rpe?rpeColor(r.rpe):'#64748b')+'">'+(r.rpe?r.rpe+'/10':'—')+'</td></tr>';
+  }
+  if(done.length===0)rows+='<tr><td colspan="9" style="text-align:center;color:#475569;padding:16px;">Complète des séances pour voir l\'historique</td></tr>';
+  document.getElementById("stats-history").innerHTML=rows;
+}
+
+// INIT
 initPlan();
-sb.auth.onAuthStateChange(function(event, session) {
-  if (session) {
-    userId = session.user.id;
-    document.getElementById("auth-screen").style.display = "none";
-    document.getElementById("app").style.display = "block";
+sb.auth.onAuthStateChange(function(event,session){
+  if(session){
+    userId=session.user.id;
+    document.getElementById("auth-screen").style.display="none";
+    document.getElementById("app").style.display="block";
     initPlan();
-    loadData().then(function() {
-      renderPhaseLegend();
-      renderBars();
-      renderWeek();
-      renderRenfo();
-      renderAllures();
+    loadData().then(function(){
+      renderPhaseLegend();renderBars();renderWeek();renderRenfo();renderAllures();
     });
-  } else {
-    document.getElementById("auth-screen").style.display = "block";
-    document.getElementById("app").style.display = "none";
+  }else{
+    document.getElementById("auth-screen").style.display="block";
+    document.getElementById("app").style.display="none";
   }
 });
 </script>
