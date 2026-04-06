@@ -570,7 +570,7 @@ function renderBars(){
     var allDone=runs>0&&done===runs;
     var bg=n===selWeek?ph.color:(allDone?"#10b981aa":ph.color+"55");
     bHtml+='<div class="bar-wrap" onclick="selectWeek('+n+')"><div class="bar" style="height:'+h+'px;background:'+bg+';"></div></div>';
-    wHtml+='<button class="week-btn'+(n===selWeek?" active":""),style="background:'+(n===selWeek?ph.color:"#1e293b")+';color:'+(n===selWeek?"#fff":"#64748b")+'" onclick="selectWeek('+n+')">S'+n+'</button>';
+    wHtml+='<button class="week-btn'+(n===selWeek?" active":"")+'" style="background:'+(n===selWeek?ph.color:"#1e293b")+';color:'+(n===selWeek?"#fff":"#64748b")+'" onclick="selectWeek('+n+')">S'+n+'</button>';
   }
   document.getElementById("bars").innerHTML=bHtml;
   document.getElementById("week-btns").innerHTML=wHtml;
@@ -609,7 +609,7 @@ function renderWeek(){
     html+='<div class="day-row" style="border-left:3px solid '+borderColor+';">';
     html+='<div class="day-summary"'+(s.isRun||!s.isRun?' style="cursor:pointer;" onclick="toggleExpand('+di+')"':'')+' >';
     if(s.isRun){
-      html+='<div class="chk'+(sess.done?" done":""),onclick="event.stopPropagation();toggleDone('+di+')">'+(sess.done?"✓":"")+'</div>';
+      html+='<div class="chk'+(sess.done?" done":"__")+'" onclick="event.stopPropagation();toggleDone('+di+')">'+(sess.done?"V":"")+"</div>";
     }else{
       html+='<div style="width:20px;flex-shrink:0;"></div>';
     }
@@ -981,7 +981,7 @@ function renderHistory(allRuns){
     var ph=getPhase(r.week);
     rows+='<tr><td style="color:'+ph.color+';">S'+r.week+'</td><td>'+JOURS[r.day]+'</td><td>'+r.type+'</td><td>'+r.kmPlan+'km</td><td>'+(r.kmReal?r.kmReal+'km':'—')+'</td><td>'+(r.timeSec?fmtTime(r.timeSec):'—')+'</td><td style="color:#86efac;">'+(r.paceSec?fmtTime(r.paceSec)+'/km':'—')+'</td><td style="color:#fca5a5;">'+(r.fcm?r.fcm+'bpm':'—')+'</td><td style="color:'+(r.rpe?rpeColor(r.rpe):'#64748b')+'">'+(r.rpe?r.rpe+'/10':'—')+'</td></tr>';
   }
-  if(done.length===0)rows+='<tr><td colspan="9" style="text-align:center;color:#475569;padding:16px;">Complète des séances pour voir l\'historique</td></tr>';
+  if(!rows)rows='<tr><td colspan="9" style="text-align:center;color:#475569;padding:16px;">Complete des seances pour voir l\'historique</td></tr>';
   document.getElementById("stats-history").innerHTML=rows;
 }
 
