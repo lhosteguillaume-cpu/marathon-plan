@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Plan Marathon Sub-3h30</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:system-ui,sans-serif;background:#0f172a;color:#f1f5f9;min-height:100vh;padding:16px;}
+  h1{font-size:21px;font-weight:700;}
+  button{cursor:pointer;font-family:inherit;}
+  input{font-family:inherit;}
+
+  .center{text-align:center;}
+  .muted{color:#94a3b8;}
+  .small{font-size:12px;}
+  .xsmall{font-size:11px;}
+  .bold{font-weight:700;}
+
+  /* Auth */
+  #auth-screen{max-width:360px;margin:80px auto;background:#1e293b;border-radius:12px;padding:32px;}
+  #auth-screen h2{font-size:18px;margin-bottom:4px;}
+  #auth-screen p{color:#64748b;font-size:13px;margin-bottom:24px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;}
+  .field input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:14px;outline:none;}
+  .field input:focus{border-color:#3b82f6;}
+  .btn-primary{width:100%;padding:10px;border-radius:99px;border:none;background:#3b82f6;color:#fff;font-size:14px;font-weight:700;margin-top:4px;}
+  .btn-secondary{width:100%;padding:8px;border-radius:99px;border:1px solid #334155;background:transparent;color:#94a3b8;font-size:13px;margin-top:10px;}
+  #auth-error{color:#f87171;font-size:12px;margin-top:8px;text-align:center;}
+
+  /* App */
+  #app{max-width:860px;margin:0 auto;display:none;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .logout-btn{font-size:12px;padding:4px 12px;border-radius:99px;border:1px solid #334155;background:transparent;color:#64748b;}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;justify-content:center;margin-bottom:16px;}
+  .tab{padding:6px 16px;border-radius:99px;border:none;font-size:13px;font-weight:600;background:#1e293b;color:#94a3b8;}
+  .tab.active{background:#3b82f6;color:#fff;}
+
+  /* Phase legend */
+  .phase-legend{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;}
+  .phase-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
+  /* Volume bars */
+  .bars{display:flex;gap:3px;margin-bottom:4px;align-items:flex-end;height:50px;}
+  .bar-wrap{flex:1;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:50px;}
+  .bar{width:100%;border-radius:2px 2px 0 0;transition:all 0.15s;}
+
+  /* Week buttons */
+  .week-btns{display:grid;grid-template-columns:repeat(23,1fr);gap:3px;margin-bottom:18px;}
+  .week-btn{padding:4px 1px;border-radius:4px;border:none;font-size:10px;font-weight:700;color:#64748b;background:#1e293b;}
+  .week-btn.active{color:#fff;}
+
+  /* Week card */
+  .week-card{background:#1e293b;border-radius:12px;padding:18px;margin-bottom:14px;}
+  .week-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .phase-badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;margin-top:4px;}
+
+  /* Day rows */
+  .day-row{background:#0f172a;border-radius:10px;overflow:hidden;margin-bottom:8px;}
+  .day-summary{display:flex;align-items:center;gap:10px;padding:10px 12px;}
+  .checkbox{width:20px;height:20px;border-radius:4px;border:2px solid #475569;background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;cursor:pointer;}
+  .checkbox.done{background:#10b981;border-color:#10b981;}
+  .type-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;}
+  .day-detail{font-size:12px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .expand-arrow{color:#475569;font-size:12px;margin-left:auto;}
+
+  /* Expanded panel */
+  .day-panel{padding:0 12px 14px;border-top:1px solid #1e293b;}
+  .fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+  .field-block label{display:block;font-size:11px;color:#64748b;margin-bottom:4px;}
+  .field-block input{width:100%;padding:6px 8px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px;outline:none;}
+  .pace-display{padding:6px 8px;border-radius:6px;border:1px solid #334155;background:#0f172a;font-size:13px;min-height:32px;display:flex;align-items:center;}
+  .rpe-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;}
+  .rpe-btn{width:32px;height:32px;border-radius:6px;border:none;font-size:13px;font-weight:700;background:#1e293b;color:#64748b;transition:all 0.1s;}
+  .comment-box{margin-top:8px;font-size:11px;padding:5px 9px;border-radius:6px;}
+  .report-btn{margin-top:10px;font-size:12px;padding:5px 14px;border-radius:99px;border:1px solid #f97316;background:transparent;color:#f97316;}
+
+  /* Inline badges */
+  .badge{font-size:11px;padding:2px 8px;border-radius:6px;}
+  .badge-blue{background:#1e3a5f;color:#93c5fd;}
+  .badge-green{background:#14532d22;color:#86efac;}
+  .badge-red{background:#7f1d1d22;color:#fca5a5;}
+
+  /* Bilan */
+  .bilan-box{background:#1e293b;border-radius:12px;padding:16px;text-align:center;}
+  .bilan-btn{padding:10px 24px;border-radius:99px;border:none;font-size:14px;font-weight:700;background:#3b82f6;color:#fff;margin-top:10px;}
+
+  /* Renfo */
+  .renfo-card{background:#1e293b;border-radius:12px;padding:18px;}
+  .renfo-item{display:flex;gap:12px;padding:10px 12px;background:#0f172a;border-radius:8px;margin-bottom:6px;}
+  .renfo-num{width:24px;height:24px;border-radius:99px;background:#0e7490;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#cffafe;flex-shrink:0;}
+
+  /* Allures */
+  .allures-card{background:#1e293b;border-radius:12px;padding:18px;}
+  .allure-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#0f172a;border-radius:8px;margin-bottom:6px;}
+  .strat-box{margin-top:14px;padding:12px 14px;background:#0f172a;border-radius:8px;border-left:3px solid #3b82f6;}
+  .strat-box ul{padding-left:14px;display:flex;flex-direction:column;gap:4px;}
+
+  /* Save indicator */
+  .save-indicator{font-size:11px;margin-left:8px;}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="center" style="margin-bottom:20px;">
+    <div style="font-size:32px;">🏃</div>
+    <h2>Plan Marathon Sub-3h30</h2>
+    <p>Connecte-toi pour accéder à ton plan</p>
+  </div>
+  <div class="field">
+    <label>Email</label>
+    <input type="email" id="auth-email" placeholder="ton@email.com"/>
+  </div>
+  <div class="field">
+    <label>Mot de passe</label>
+    <input type="password" id="auth-password" placeholder="••••••••"/>
+  </div>
+  <button class="btn-primary" onclick="signIn()">Se connecter</button>
+  <button class="btn-secondary" onclick="signUp()">Créer un compte</button>
+  <div id="auth-error"></div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <div>
+      <h1>🏃 Plan Marathon Sub-3h30</h1>
+      <p class="muted small">23 semaines · 6 avril → 13 septembre · Plat bitume · 4 sorties/semaine
+        <span class="save-indicator" id="save-indicator" style="color:#22c55e;">✓ Sauvegardé</span>
+      </p>
+    </div>
+    <button class="logout-btn" onclick="signOut()">Déconnexion</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('plan',this)">📅 Plan</button>
+    <button class="tab" onclick="setTab('renfo',this)">💪 Renforcement</button>
+    <button class="tab" onclick="setTab('allures',this)">📏 Allures</button>
+  </div>
+
+  <!-- PLAN TAB -->
+  <div id="tab-plan">
+    <div class="phase-legend" id="phase-legend"></div>
+    <div class="bars" id="bars"></div>
+    <div class="week-btns" id="week-btns"></div>
+    <div class="week-card" id="week-card"></div>
+    <div class="bilan-box">
+      <p class="muted small">Toutes les 2 semaines, copie ce bilan et colle-le dans ta conversation Claude pour analyse et adaptation du plan.</p>
+      <button class="bilan-btn" onclick="copyBilan()">📊 Copier le bilan dans le presse-papier</button>
+      <div id="bilan-confirm" style="font-size:12px;color:#22c55e;margin-top:8px;display:none;">✓ Bilan copié ! Colle-le dans Claude.</div>
+    </div>
+  </div>
+
+  <!-- RENFO TAB -->
+  <div id="tab-renfo" style="display:none;">
+    <div class="renfo-card">
+      <div style="font-size:13px;font-weight:700;color:#06b6d4;margin-bottom:4px;">Séance renforcement spécifique course</div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:14px;">10–15 min · 2 à 3 fois par semaine · sans matériel</div>
+      <div id="renfo-list"></div>
+      <div style="margin-top:12px;padding:10px 12px;background:#0f172a;border-radius:8px;font-size:12px;color:#64748b;border-left:3px solid #06b6d4;">
+        <strong style="color:#94a3b8;">Intégration :</strong> Après un footing facile ou en fin de séance muscu. Jamais la veille d'une sortie longue ou d'un fractionné.
+      </div>
+    </div>
+  </div>
+
+  <!-- ALLURES TAB -->
+  <div id="tab-allures" style="display:none;">
+    <div class="allures-card">
+      <div style="font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:12px;">Allures cibles — Objectif Sub-3h30</div>
+      <div id="allures-list"></div>
+      <div class="strat-box">
+        <div style="font-weight:700;color:#94a3b8;margin-bottom:8px;font-size:12px;">Stratégie de course — plat bitume</div>
+        <ul style="font-size:12px;color:#64748b;">
+          <li>Km 1–5 : retiens-toi, pars à 5:05–5:10/km même si tu te sens bien</li>
+          <li>Km 6–30 : allure cible constante 4:57–5:00/km</li>
+          <li>Km 30–42 : gère au ressenti, accepte un léger ralentissement</li>
+          <li>Gel toutes les 40–45mn dès le km 20 — à tester dès la S13 en sortie longue</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── SUPABASE CONFIG ────────────────────────────────────────────────────────
+// Remplace ces deux valeurs par les tiennes (voir guide d'installation)
+const SUPABASE_URL  = https://veccyhsxszgehcximizm.supabase.co;
+const SUPABASE_ANON = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlY2N5aHN4c3pnZWhjeGltaXptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODIzOTAsImV4cCI6MjA5MTA1ODM5MH0.WHKsQfinjeRKZb7A7ZIe90MCRWtgCnpnAqTkAOzSLbI;
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const PHASES=[
+  {name:"Mise en route",weeks:[1,2,3],color:"#22c55e"},
+  {name:"Base aérobie",weeks:[4,5,6,7],color:"#3b82f6"},
+  {name:"Développement",weeks:[8,9,10,11],color:"#8b5cf6"},
+  {name:"Spécifique marathon",weeks:[12,13,14,15],color:"#f59e0b"},
+  {name:"Pic marathon",weeks:[16,17,18,19],color:"#ef4444"},
+  {name:"Affûtage",weeks:[20,21,22,23],color:"#10b981"},
+];
+const JOURS=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+const TC={"Repos":"#6b7280","Footing facile":"#3b82f6","Tempo":"#f59e0b","Fractionné":"#ef4444","Sortie longue":"#8b5cf6","Course":"#10b981","Repos/vélo":"#6b7280","Muscu/escalade":"#9ca3af","Reporté":"#f97316"};
+const RPE_TARGET={"Footing facile":4,"Tempo":7,"Fractionné":8,"Sortie longue":6,"Course":10,"Reporté":6};
+const ALLURES={"Facile":"5:40–6:10/km","Tempo":"4:40–4:45/km","Allure marathon":"4:55–5:00/km","Fractionné 1km":"4:15–4:20/km"};
+const RENFO=[
+  {nom:"Fentes alternées",detail:"3×15 par jambe, lentes et contrôlées"},
+  {nom:"Mollets unilatéraux",detail:"3×20 par pied, sur une marche"},
+  {nom:"Pont fessier",detail:"3×20, 2 sec de pause en haut"},
+  {nom:"Gainage latéral",detail:"3×30 sec par côté"},
+  {nom:"Squat sur une jambe",detail:"3×10 par jambe, genou bien aligné"},
+  {nom:"Dead bug",detail:"3×10 par côté, dos collé au sol"},
+  {nom:"Montées de genoux",detail:"3×30 sec explosif — proprioception cheville"},
+];
+
+function mk(type,detail,km,isRun){return{type,detail,km,isRun:isRun!==undefined?isRun:(km>0)};}
+const BASE_PLAN=[
+  [mk("Footing facile","6km allure facile",6),mk("Muscu/escalade","Muscu 45mn + escalade + renforcement 10mn",0,false),mk("Footing facile","7km allure facile",7),mk("Repos/vélo","Repos ou vélo urbain",0,false),mk("Footing facile","6km allure facile",6),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","10km allure très facile",10)],
+  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu + escalade + renforcement 10mn",0,false),mk("Footing facile","8km allure facile",8),mk("Repos/vélo","Repos ou vélo urbain",0,false),mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","12km allure facile",12)],
+  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu + escalade + renforcement 10mn",0,false),mk("Tempo","2km échauff + 3km tempo + 2km retour",7),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","14km allure facile",14)],
+  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu + escalade + renforcement 10mn",0,false),mk("Tempo","2km échauff + 4km tempo + 2km retour",8),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","16km allure facile",16)],
+  [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu + escalade + renforcement 10mn",0,false),mk("Tempo","2km échauff + 5km tempo + 2km retour",9),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","17km allure facile",17)],
+  [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu + escalade + renforcement 10mn",0,false),mk("Tempo","2km échauff + 6km tempo + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","18km allure facile",18)],
+  [mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu + escalade + renforcement 10mn",0,false),mk("Tempo","2km échauff + 7km tempo + 2km retour",11),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","20km allure facile",20)],
+  [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 6×1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 7km tempo + 2km retour",11),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","22km (dont 4km à allure marathon en fin)",22)],
+  [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 6×1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 8km tempo + 2km retour",12),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","23km (dont 6km à allure marathon en fin)",23)],
+  [mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 8×1km à 4:18/km (rép 400m) + 2km retour",12),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 9km tempo + 2km retour",13),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","25km (dont 8km à allure marathon en fin)",25)],
+  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu légère + escalade",0,false),mk("Fractionné","2km échauff + 5×1km à 4:18/km (rép 400m) + 2km retour",9),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 6km tempo + 2km retour",10),mk("Repos","Repos total",0,false),mk("Sortie longue","18km allure facile",18)],
+  [mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 8×1km à 4:18/km (rép 400m) + 2km retour",12),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 9km tempo + 2km retour",13),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","26km (dont 8km à allure marathon en fin)",26)],
+  [mk("Footing facile","9km allure facile",9),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 10×1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 10km tempo + 2km retour",14),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","28km (dont 10km à allure marathon en fin)",28)],
+  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade + renforcement 10mn",0,false),mk("Fractionné","2km échauff + 10×1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 11km tempo + 2km retour",15),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","30km (dont 12km à allure marathon en fin)",30)],
+  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu légère",0,false),mk("Fractionné","2km échauff + 6×1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 7km tempo + 2km retour",11),mk("Repos","Repos total",0,false),mk("Sortie longue","20km allure facile",20)],
+  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade",0,false),mk("Fractionné","2km échauff + 10×1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 10km tempo + 2km retour",14),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","28km (dont 12km à allure marathon)",28)],
+  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade",0,false),mk("Fractionné","2km échauff + 10×1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 10km tempo + 2km retour",14),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","30km (dont 15km à allure marathon)",30)],
+  [mk("Footing facile","10km allure facile",10),mk("Muscu/escalade","Muscu allégée + escalade",0,false),mk("Fractionné","2km échauff + 10×1km à 4:18/km (rép 400m) + 2km retour",14),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 12km tempo + 2km retour",16),mk("Muscu/escalade","Muscu 45mn",0,false),mk("Sortie longue","32km (dont 18km à allure marathon)",32)],
+  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu légère uniquement",0,false),mk("Fractionné","2km échauff + 6×1km à 4:18/km (rép 400m) + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Tempo","2km échauff + 6km tempo + 2km retour",10),mk("Repos","Repos total",0,false),mk("Sortie longue","20km allure facile",20)],
+  [mk("Footing facile","8km allure facile",8),mk("Muscu/escalade","Muscu légère ou escalade légère",0,false),mk("Fractionné","2km échauff + 8×1km à 4:18/km (rép 400m) + 2km retour",12),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","6km allure facile",6),mk("Repos","Repos total",0,false),mk("Sortie longue","24km allure facile",24)],
+  [mk("Footing facile","7km allure facile",7),mk("Muscu/escalade","Muscu légère",0,false),mk("Tempo","2km échauff + 8km tempo + 2km retour",12),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","6km allure facile",6),mk("Repos","Repos total",0,false),mk("Sortie longue","18km allure facile",18)],
+  [mk("Footing facile","6km allure facile",6),mk("Repos","Repos ou escalade très légère",0,false),mk("Tempo","2km échauff + 6km tempo + 2km retour",10),mk("Repos/vélo","Repos ou vélo",0,false),mk("Footing facile","5km allure facile",5),mk("Repos","Repos total",0,false),mk("Sortie longue","13km allure facile",13)],
+  [mk("Repos","Repos total",0,false),mk("Footing facile","20mn très facile + étirements",3),mk("Repos","Repos + hydratation ++",0,false),mk("Footing facile","15mn footing + 4×100m accélérations",3),mk("Repos","Repos, préparation logistique",0,false),mk("Repos","Repos, pasta party, coucher tôt",0,false),mk("Course","🏁 MARATHON — 13 septembre — Objectif : Sub 3h30",42)],
+];
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let sessions={}, plan=BASE_PLAN.map(w=>w.map(s=>({...s}))), selWeek=1, expandedDay=null, userId=null;
+
+// ─── UTILS ──────────────────────────────────────────────────────────────────
+function totalKm(w){return w.reduce((s,d)=>s+(d.km||0),0);}
+function getPhase(n){return PHASES.find(p=>p.weeks.includes(n));}
+function skey(w,d){return `${w}-${d}`;}
+function weekLabel(n){
+  const s=new Date(2025,3,6);s.setDate(s.getDate()+(n-1)*7);
+  const e=new Date(s);e.setDate(s.getDate()+6);
+  const f={day:"numeric",month:"short"};
+  return `${s.toLocaleDateString("fr-FR",f)} – ${e.toLocaleDateString("fr-FR",f)}`;
+}
+function parseTime(str){
+  if(!str||!str.trim())return null;
+  const p=str.trim().split(":").map(Number);
+  if(p.some(isNaN))return null;
+  if(p.length===3)return p[0]*3600+p[1]*60+p[2];
+  if(p.length===2)return p[0]*60+p[1];
+  return null;
+}
+function fmtTime(sec){
+  if(sec==null)return "";
+  const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+  if(h>0)return `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  return `${m}:${String(s).padStart(2,"0")}`;
+}
+function calcPace(sec,km){
+  if(!sec||!km||km<=0)return null;
+  return fmtTime(Math.round(sec/km));
+}
+function rpeColor(r){return r<=4?"#22c55e":r<=6?"#3b82f6":r<=8?"#f59e0b":"#ef4444";}
+function rpeComment(actual,target,type){
+  if(!actual)return null;
+  if(type==="Course")return actual>=9?"Tu t'es tout donné 💪":"Conserve de l'énergie pour la fin !";
+  const d=actual-target;
+  if(d<=-2)return "En dessous de la cible — tu peux hausser l'allure la prochaine fois.";
+  if(d===-1)return "Légèrement en dessous — reste dans cette zone.";
+  if(d<=1)return "Dans la cible — parfait.";
+  if(d===2)return "Un peu chargé — assure-toi de bien récupérer.";
+  return "Trop intense — réduis l'allure ou le volume la prochaine fois.";
+}
+function setSaveIndicator(state){
+  const el=document.getElementById("save-indicator");
+  if(state==="saving"){el.textContent="· Sauvegarde…";el.style.color="#f59e0b";}
+  else{el.textContent="· Sauvegardé ✓";el.style.color="#22c55e";}
+}
+
+// ─── AUTH ───────────────────────────────────────────────────────────────────
+async function signIn(){
+  const email=document.getElementById("auth-email").value;
+  const password=document.getElementById("auth-password").value;
+  const{error}=await sb.auth.signInWithPassword({email,password});
+  if(error){document.getElementById("auth-error").textContent=error.message;}
+}
+async function signUp(){
+  const email=document.getElementById("auth-email").value;
+  const password=document.getElementById("auth-password").value;
+  const{error}=await sb.auth.signUp({email,password});
+  if(error){document.getElementById("auth-error").textContent=error.message;}
+  else{document.getElementById("auth-error").style.color="#22c55e";document.getElementById("auth-error").textContent="Compte créé ! Vérifie ton email puis connecte-toi.";}
+}
+async function signOut(){
+  await sb.auth.signOut();
+  document.getElementById("app").style.display="none";
+  document.getElementById("auth-screen").style.display="block";
+}
+
+// ─── SUPABASE DATA ───────────────────────────────────────────────────────────
+async function loadData(){
+  const{data}=await sb.from("sessions").select("*").eq("user_id",userId);
+  sessions={};
+  (data||[]).forEach(r=>{sessions[r.session_key]={done:r.done,rpe:r.rpe,time:r.time,distReal:r.dist_real,fcm:r.fcm};});
+  const{data:pd}=await sb.from("plan_overrides").select("*").eq("user_id",userId);
+  if(pd&&pd.length>0){
+    try{plan=JSON.parse(pd[0].plan_json);}catch(_){}
+  }
+}
+async function saveSession(w,d,patch){
+  setSaveIndicator("saving");
+  const key=skey(w,d);
+  const cur=sessions[key]||{done:false,rpe:null,time:"",distReal:"",fcm:""};
+  sessions[key]={...cur,...patch};
+  const s=sessions[key];
+  await sb.from("sessions").upsert({user_id:userId,session_key:key,done:s.done,rpe:s.rpe,time:s.time,dist_real:s.distReal,fcm:s.fcm},{onConflict:"user_id,session_key"});
+  setSaveIndicator("saved");
+  renderWeek();
+  renderBars();
+}
+async function savePlan(){
+  setSaveIndicator("saving");
+  await sb.from("plan_overrides").upsert({user_id:userId,plan_json:JSON.stringify(plan)},{onConflict:"user_id"});
+  setSaveIndicator("saved");
+}
+
+// ─── BILAN ──────────────────────────────────────────────────────────────────
+function copyBilan(){
+  const w2=selWeek,w1=Math.max(1,selWeek-1);
+  let lines=[`=== BILAN SEMAINES ${w1} & ${w2} ===`];
+  [w1,w2].forEach(wn=>{
+    lines.push(`\n-- Semaine ${wn} (${weekLabel(wn)}) --`);
+    plan[wn-1].forEach((s,di)=>{
+      if(!s.isRun)return;
+      const sess=sessions[skey(wn,di)]||{};
+      const timeSec=parseTime(sess.time);
+      const dist=parseFloat(sess.distReal)||null;
+      const pace=calcPace(timeSec,dist||s.km);
+      lines.push(`${JOURS[di]} ${s.type} | Prévu: ${s.km}km | Réalisé: ${dist?dist+"km":"—"} | Temps: ${sess.time||"—"} | Allure: ${pace?pace+"/km":"—"} | FCM: ${sess.fcm||"—"}bpm | RPE: ${sess.rpe||"—"}/10 | Fait: ${sess.done?"Oui":"Non"}`);
+    });
+  });
+  lines.push("\nMerci d'analyser ces données et de me proposer un bilan + éventuelles adaptations du plan pour les prochaines semaines.");
+  navigator.clipboard.writeText(lines.join("\n")).then(()=>{
+    const c=document.getElementById("bilan-confirm");
+    c.style.display="block";
+    setTimeout(()=>c.style.display="none",4000);
+  });
+}
+
+// ─── REPORT SESSION ──────────────────────────────────────────────────────────
+function reportSession(wIdx,dIdx){
+  const sess=plan[wIdx][dIdx];
+  plan[wIdx][dIdx]={type:"Repos",detail:"Séance non réalisée (reportée)",km:0,isRun:false};
+  let placed=false;
+  for(let wi=wIdx;wi<plan.length&&!placed;wi++){
+    for(let di=(wi===wIdx?dIdx+1:0);di<7&&!placed;di++){
+      const s=plan[wi][di];
+      if(!s.isRun&&(s.type==="Repos/vélo"||s.type==="Repos")){
+        plan[wi][di]={...sess,type:"Reporté",detail:`[Reporté] ${sess.detail}`,isRun:true};
+        placed=true;
+      }
+    }
+  }
+  savePlan();
+  renderWeek();
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────────────
+function setTab(name,btn){
+  ["plan","renfo","allures"].forEach(t=>{
+    document.getElementById("tab-"+t).style.display=t===name?"block":"none";
+  });
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+function renderPhaseLegend(){
+  const el=document.getElementById("phase-legend");
+  el.innerHTML=PHASES.map(p=>`<div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#cbd5e1;"><div class="phase-dot" style="background:${p.color}"></div><span>S${p.weeks[0]}–S${p.weeks[p.weeks.length-1]} ${p.name}</span></div>`).join("");
+}
+
+function renderBars(){
+  const maxKm=Math.max(...plan.map(w=>totalKm(w)));
+  const bars=document.getElementById("bars");
+  const btns=document.getElementById("week-btns");
+  bars.innerHTML="";btns.innerHTML="";
+  plan.forEach((w,i)=>{
+    const n=i+1,ph=getPhase(n),km=totalKm(w),h=Math.max(4,(km/maxKm)*46);
+    const runs=w.filter(s=>s.isRun).length;
+    const done=w.filter((_,di)=>(sessions[skey(n,di)]||{}).done&&w[di].isRun).length;
+    const allDone=runs>0&&done===runs;
+    const bg=n===selWeek?ph.color:allDone?"#10b981aa":ph.color+"55";
+    bars.innerHTML+=`<div class="bar-wrap" onclick="selectWeek(${n})"><div class="bar" style="height:${h}px;background:${bg};"></div></div>`;
+    const btn=document.createElement("button");
+    btn.className="week-btn"+(n===selWeek?" active":"");
+    btn.style.background=n===selWeek?ph.color:"#1e293b";
+    btn.style.color=n===selWeek?"#fff":"#64748b";
+    btn.textContent="S"+n;
+    btn.onclick=()=>selectWeek(n);
+    btns.appendChild(btn);
+  });
+}
+
+function renderWeek(){
+  const ph=getPhase(selWeek);
+  const w=plan[selWeek-1];
+  const runs=w.filter(s=>s.isRun).length;
+  const done=w.filter((_,di)=>(sessions[skey(selWeek,di)]||{}).done&&w[di].isRun).length;
+  const card=document.getElementById("week-card");
+  card.style.borderLeft=`4px solid ${ph.color}`;
+  let html=`<div class="week-header">
+    <div>
+      <div style="font-size:17px;font-weight:700;">Semaine ${selWeek}</div>
+      <div style="font-size:11px;color:#64748b;margin-top:2px;">${weekLabel(selWeek)}</div>
+      <div class="phase-badge" style="background:${ph.color}33;color:${ph.color};">${ph.name}</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:22px;font-weight:700;color:${ph.color};">${totalKm(w)} km</div>
+      <div style="font-size:10px;color:#64748b;">${runs} sorties · ${done} réalisées</div>
+    </div>
+  </div>`;
+
+  w.forEach((s,di)=>{
+    const sess=sessions[skey(selWeek,di)]||{done:false,rpe:null,time:"",distReal:"",fcm:""};
+    const isExp=expandedDay===di;
+    const target=RPE_TARGET[s.type];
+    const comment=rpeComment(sess.rpe,target,s.type);
+    const timeSec=parseTime(sess.time);
+    const distNum=parseFloat(sess.distReal)||null;
+    const pace=calcPace(timeSec,distNum||s.km);
+    const borderColor=sess.done?"#10b981":(TC[s.type]||"#6b7280");
+
+    // Inline badges
+    let badges="";
+    if(sess.distReal) badges+=`<span class="badge badge-blue">→ ${sess.distReal}km</span>`;
+    if(pace)          badges+=`<span class="badge badge-green">${pace}/km</span>`;
+    if(sess.fcm)      badges+=`<span class="badge badge-red">♥ ${sess.fcm}bpm</span>`;
+    if(sess.rpe)      badges+=`<span class="badge" style="background:${rpeColor(sess.rpe)}22;color:${rpeColor(sess.rpe)};">RPE ${sess.rpe}</span>`;
+
+    const cbClass=sess.done?"checkbox done":"checkbox";
+    const cbContent=sess.done?"✓":"";
+
+    html+=`<div class="day-row" style="border-left:3px solid ${borderColor};">
+      <div class="day-summary"${s.isRun?` style="cursor:pointer;" onclick="toggleExpand(${di})"`:""}>
+        ${s.isRun?`<div class="${cbClass}" onclick="event.stopPropagation();toggleDone(${di})">${cbContent}</div>`:`<div style="width:20px;flex-shrink:0;"></div>`}
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:10px;font-weight:700;color:#64748b;">${JOURS[di]}</span>
+            <span class="type-badge" style="background:${(TC[s.type]||"#6b7280")}22;color:${TC[s.type]||"#6b7280"};">${s.type}</span>
+            ${s.km>0?`<span style="font-size:11px;color:#64748b;">${s.km} km prévu</span>`:""}
+            ${badges}
+          </div>
+          <div class="day-detail">${s.detail}</div>
+        </div>
+        ${s.isRun?`<span class="expand-arrow">${isExp?"▲":"▼"}</span>`:""}
+      </div>`;
+
+    if(s.isRun&&isExp){
+      html+=`<div class="day-panel">
+        <div class="fields-grid">
+          <div class="field-block">
+            <label>⏱ Temps réalisé</label>
+            <input type="text" placeholder="ex: 48:32" value="${sess.time||""}" oninput="updateField(${di},'time',this.value)"/>
+          </div>
+          <div class="field-block">
+            <label>📍 Distance réelle (km)</label>
+            <input type="number" step="0.1" placeholder="${s.km}" value="${sess.distReal||""}" oninput="updateField(${di},'distReal',this.value)"/>
+          </div>
+          <div class="field-block">
+            <label>♥ FC max (bpm)</label>
+            <input type="number" placeholder="ex: 172" value="${sess.fcm||""}" oninput="updateField(${di},'fcm',this.value)"/>
+          </div>
+          <div class="field-block">
+            <label>⚡ Allure calculée</label>
+            <div class="pace-display" style="color:${pace?"#86efac":"#475569"};">${pace?pace+" /km":"Saisir temps + distance"}</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:11px;color:#64748b;">RPE ressenti</span>
+            ${target?`<span style="font-size:11px;color:#475569;">cible : ${target}/10</span>`:""}
+          </div>
+          <div class="rpe-row">
+            ${[1,2,3,4,5,6,7,8,9,10].map(r=>`<button class="rpe-btn" style="background:${sess.rpe===r?rpeColor(r):"#1e293b"};color:${sess.rpe===r?"#fff":"#64748b"};" onclick="updateRPE(${di},${r})">${r}</button>`).join("")}
+          </div>
+        </div>
+        ${comment?`<div class="comment-box" style="color:${rpeColor(sess.rpe)};background:${rpeColor(sess.rpe)}18;">${comment}</div>`:""}
+        ${!sess.done?`<button class="report-btn" onclick="reportSession(${selWeek-1},${di})">Reporter cette séance →</button>`:""}
+      </div>`;
+    }
+    html+=`</div>`;
+  });
+  card.innerHTML=html;
+}
+
+function selectWeek(n){selWeek=n;expandedDay=null;renderBars();renderWeek();}
+function toggleExpand(di){expandedDay=expandedDay===di?null:di;renderWeek();}
+function toggleDone(di){
+  const key=skey(selWeek,di);
+  const cur=sessions[key]||{done:false,rpe:null,time:"",distReal:"",fcm:""};
+  saveSession(selWeek,di,{done:!cur.done});
+}
+
+let debounceTimers={};
+function updateField(di,field,val){
+  // Update UI immediately
+  const key=skey(selWeek,di);
+  const cur=sessions[key]||{done:false,rpe:null,time:"",distReal:"",fcm:""};
+  sessions[key]={...cur,[field]:val};
+  // Debounce save
+  clearTimeout(debounceTimers[di+field]);
+  debounceTimers[di+field]=setTimeout(()=>{saveSession(selWeek,di,{[field]:val});},800);
+  // Re-render pace live
+  renderWeek();
+}
+function updateRPE(di,r){
+  const key=skey(selWeek,di);
+  const cur=sessions[key]||{};
+  const newRpe=cur.rpe===r?null:r;
+  saveSession(selWeek,di,{rpe:newRpe});
+}
+
+function renderRenfo(){
+  document.getElementById("renfo-list").innerHTML=RENFO.map((ex,i)=>`
+    <div class="renfo-item">
+      <div class="renfo-num">${i+1}</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:2px;">${ex.nom}</div>
+        <div style="font-size:12px;color:#94a3b8;">${ex.detail}</div>
+      </div>
+    </div>`).join("");
+}
+
+function renderAllures(){
+  document.getElementById("allures-list").innerHTML=Object.entries(ALLURES).map(([k,v])=>`
+    <div class="allure-row">
+      <span style="font-size:13px;color:#94a3b8;">${k}</span>
+      <span style="font-size:14px;font-weight:700;color:#f1f5f9;">${v}</span>
+    </div>`).join("");
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+sb.auth.onAuthStateChange(async(event,session)=>{
+  if(session){
+    userId=session.user.id;
+    document.getElementById("auth-screen").style.display="none";
+    document.getElementById("app").style.display="block";
+    await loadData();
+    renderPhaseLegend();
+    renderBars();
+    renderWeek();
+    renderRenfo();
+    renderAllures();
+  } else {
+    document.getElementById("auth-screen").style.display="block";
+    document.getElementById("app").style.display="none";
+  }
+});
+</script>
+</body>
+</html>
